@@ -48,7 +48,7 @@ static main_css : &'static str =
 
 
 static header : &'static str =
-  r#"<head><title> acronomy </title><link rel="stylesheet" type="text/css" href="main.css" >
+  r#"<head><title> acronymy </title><link rel="stylesheet" type="text/css" href="main.css" >
  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
   </head>"#;
 
@@ -57,14 +57,16 @@ impl WebSession::Server for WebSessionImpl {
     fn get(&mut self, mut context : WebSession::GetContext) {
         println!("GET");
         let (params, results) = context.get();
-        println!("path = {}", params.get_path());
+        let path = params.get_path();
+        println!("path = {}", path);
         let content = results.init_content();
         content.set_mime_type("text/html");
-        if params.get_path() == "main.css" {
+        if path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else {
-            content.get_body().set_bytes(format!("<html>{}<body>hello world</body></html>",
-                                                 header).as_bytes());
+            content.get_body().set_bytes(
+                format!("<html>{}<body><form action=\"define\" method=\"get\"><input name=\"word\"/><button>go</button></form></body></html>",
+                        header).as_bytes());
         }
         context.done()
     }
