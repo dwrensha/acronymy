@@ -23,8 +23,11 @@ impl UiView::Server for UiViewImpl {
     fn new_session(&mut self, mut context : UiView::NewSessionContext) {
         println!("asked for a new session!");
         let (_, results) = context.get();
+
         let client : WebSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl);
+        // we need to do this dance to upcast.
         results.set_session(UiSession::Client { client : client.client});
+
         context.done()
     }
 }
@@ -37,8 +40,13 @@ impl UiSession::Server for WebSessionImpl {
 
 
 impl WebSession::Server for WebSessionImpl {
-    fn get(&mut self, context : WebSession::GetContext) {
+    fn get(&mut self, mut context : WebSession::GetContext) {
         println!("GET");
+        let (params, results) = context.get();
+        println!("path = {}", params.get_path());
+        let content = results.init_content();
+        content.set_mime_type("text/plain");
+        content.get_body().set_bytes(bytes!("hello world"));
         context.done()
     }
     fn post(&mut self, context : WebSession::PostContext) {
