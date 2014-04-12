@@ -20,8 +20,11 @@ impl UiView::Server for UiViewImpl {
         context.done()
     }
 
-    fn new_session(&mut self, context : UiView::NewSessionContext) {
+    fn new_session(&mut self, mut context : UiView::NewSessionContext) {
         println!("asked for a new session!");
+        let (_, results) = context.get();
+        let client : UiSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl);
+        results.set_session(client);
         context.done()
     }
 }
@@ -35,18 +38,23 @@ impl UiSession::Server for WebSessionImpl {
 
 impl WebSession::Server for WebSessionImpl {
     fn get(&mut self, context : WebSession::GetContext) {
+        println!("GET");
         context.done()
     }
     fn post(&mut self, context : WebSession::PostContext) {
+        println!("POST");
         context.done()
     }
     fn put(&mut self, context : WebSession::PutContext) {
+        println!("PUT");
         context.done()
     }
     fn delete(&mut self, context : WebSession::DeleteContext) {
+        println!("DELETE");
         context.done()
     }
     fn open_web_socket(&mut self, context : WebSession::OpenWebSocketContext) {
+        println!("OPEN WEB SOCKET");
         context.done()
     }
 }
