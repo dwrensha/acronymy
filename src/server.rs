@@ -23,8 +23,8 @@ impl UiView::Server for UiViewImpl {
     fn new_session(&mut self, mut context : UiView::NewSessionContext) {
         println!("asked for a new session!");
         let (_, results) = context.get();
-        let client : UiSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl);
-        results.set_session(client);
+        let client : WebSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl);
+        results.set_session(UiSession::Client { client : client.client});
         context.done()
     }
 }
