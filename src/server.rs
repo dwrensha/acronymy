@@ -38,6 +38,20 @@ impl UiSession::Server for WebSessionImpl {
 
 }
 
+static main_css : &'static str =
+    "body { font-family: Helvetica, Sans, Arial;
+            font-size: medium;
+             margin-left: auto;
+             margin-right: auto;
+             width: 600px;
+     }";
+
+
+static header : &'static str =
+  r#"<head><title> acronomy </title><link rel="stylesheet" type="text/css" href="main.css" >
+ <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+  </head>"#;
+
 
 impl WebSession::Server for WebSessionImpl {
     fn get(&mut self, mut context : WebSession::GetContext) {
@@ -45,8 +59,13 @@ impl WebSession::Server for WebSessionImpl {
         let (params, results) = context.get();
         println!("path = {}", params.get_path());
         let content = results.init_content();
-        content.set_mime_type("text/plain");
-        content.get_body().set_bytes(bytes!("hello world"));
+        content.set_mime_type("text/html");
+        if params.get_path() == "main.css" {
+            content.get_body().set_bytes(main_css.as_bytes())
+        } else {
+            content.get_body().set_bytes(format!("<html>{}<body>hello world</body></html>",
+                                                 header).as_bytes());
+        }
         context.done()
     }
     fn post(&mut self, context : WebSession::PostContext) {
