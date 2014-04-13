@@ -62,6 +62,10 @@ static main_css : &'static str =
         text-align: center;
         font-size: 500%;
      }
+     .err {
+       font-size: 90%;
+       color: #AA0000;
+     }
      ";
 
 
@@ -117,7 +121,8 @@ impl WebSessionImpl {
 
     fn is_word(&self, word : &str) -> sqlite3::SqliteResult<bool> {
 
-        // TODO sanitize `word`
+        if ! word.is_alphanumeric() { return Ok(false); }
+
         let cursor = try!(self.db.prepare(
             format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
             &None));
@@ -216,7 +221,7 @@ impl WebSession::Server for WebSessionImpl {
             if !self.checked(self.is_word(word)) {
                 content.get_body().set_bytes(
                     html_body(
-                        "<div> that's not a word </div>
+                        "<div class=\"err\"> that's not a word </div>
                            <form action=\"define\" method=\"get\">
                            <input name=\"word\"/><button>go</button></form>").as_bytes());
                 return context.done();
@@ -272,7 +277,7 @@ impl WebSession::Server for WebSessionImpl {
                             format!(
                                 "<div class=\"word\">{word}</div>
                                  {def}
-                                 <div>invalid definition</div>
+                                 <div class=\"err\">invalid definition</div>
                                  <form action=\"define\" method=\"get\">
                                  <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
                                  <input name=\"definition\"/><button>define</button></form>",
