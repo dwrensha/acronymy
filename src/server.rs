@@ -131,7 +131,7 @@ impl WebSessionImpl {
             idx += 1;
         }
         query.push_str(";");
-        query.push_str(format!("INSERT Into Log(Word, Timestamp) VALUES({},{});", word, time));
+        query.push_str(format!("INSERT Into Log(Word, Timestamp) VALUES(\"{}\",{});", word, time));
         query.push_str("COMMIT;");
 
         println!("query: {}", query);
