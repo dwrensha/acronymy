@@ -107,13 +107,94 @@ fn parse_path(path : &str) -> Path {
 }
 
 impl WebSessionImpl {
-    fn is_word(&mut self, word : &str) -> sqlite3::SqliteResult<bool> {
+
+    fn checked<T>(&self, result : sqlite3::SqliteResult<T>) -> T {
+        match result {
+            Err(e) => {fail!("database error: {}, {:?}", e, self.db.get_errmsg()) }
+            Ok(v) => { return v; }
+        }
+    }
+
+    fn is_word(&self, word : &str) -> sqlite3::SqliteResult<bool> {
+
+        // TODO sanitize `word`
         let cursor = try!(self.db.prepare(
             format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
             &None));
         println!("got the cursor");
         return Ok(try!(cursor.step_row()).is_some());
     }
+
+    fn validate_def(&self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<bool> {
+
+        if definition.len() != word.len() { return Ok(false); }
+
+        let mut idx = 0;
+        for &d in definition.iter() {
+            if !(try!(self.is_word(d)) && d.len() > 0 && d[0] == word[idx]) {
+                return Ok(false);
+            }
+
+            idx += 1;
+        }
+
+        return Ok(true);
+    }
+
+    fn write_def(&self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<()> {
+        let mut query = StrBuf::new();
+        query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word));
+        query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
+        let mut idx = 0;
+        for &d in definition.iter() {
+            if idx != 0 { query.push_str(","); }
+            query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d));
+            idx += 1;
+        }
+        query.push_str("; COMMMIT;");
+
+        println!("query: {}", query);
+
+        try!(self.db.exec(query.as_slice()));
+
+        return Ok(());
+    }
+
+    fn get_def(&self, word : &str) -> sqlite3::SqliteResult<~str> {
+
+        let cursor = try!(self.db.prepare(
+            format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word),
+            &None));
+
+        let mut map = HashMap::<int, ~str>::new();
+
+        loop {
+            match try!(cursor.step_row()) {
+                None => break,
+                Some(row) => {
+                    let definer = match row.get(&~"Definer") { &sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
+                    let idx = match row.get(&~"Idx") { &sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
+
+                    map.insert(idx, definer);
+                }
+            }
+        }
+
+        if map.len() != word.len() {
+            return Ok(~"<div>this word has no definition yet</div>");
+        } else {
+
+            let mut result = StrBuf::new();
+            result.push_str("<div>");
+            for idx in range::<int>(0, word.len() as int) {
+                let definer : &str = map.get(&idx).as_slice();
+                result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer));
+            }
+            result.push_str("</div>");
+            return Ok(result.into_owned());
+        }
+    }
+
 }
 
 impl WebSession::Server for WebSessionImpl {
@@ -126,35 +207,81 @@ impl WebSession::Server for WebSessionImpl {
 
         let path = parse_path(raw_path);
         println!("path = {}", raw_path);
-        println!("{}, {}", path.path, path.query);
 
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else if path.path.as_slice() == "define" {
             let word : ~str = path.query.get(&~"word").clone();
 
-            // TODO check that `word` is actually a word.
-            match self.is_word(word) {
-                Err(e) => fail!("is_word error: {}, {:?}", e, self.db.get_errmsg()),
-                Ok(false) => {
-                    content.get_body().set_bytes(
-                        html_body(
-                            "<div> that's not a word </div>
+            if !self.checked(self.is_word(word)) {
+                content.get_body().set_bytes(
+                    html_body(
+                        "<div> that's not a word </div>
                            <form action=\"define\" method=\"get\">
                            <input name=\"word\"/><button>go</button></form>").as_bytes());
-                    return context.done();
-                }
-                Ok(true) => {}
+                return context.done();
+            } else {
+
             }
 
-            content.get_body().set_bytes(
-                html_body(
-                    format!(
-                        "<div class=\"word\">{word}</div>
-                     <form action=\"define\" method=\"get\">
-                     <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
-                     <input name=\"definition\"/><button>define</button></form>",
-                        word=word)).as_bytes());
+            match path.query.find(&~"definition") {
+                None => {
+                    let def_div = self.checked(self.get_def(word));
+
+                    content.get_body().set_bytes(
+                        html_body(
+                            format!(
+                                "<div class=\"word\">{word}</div>
+                                 {def}
+                                 <form action=\"define\" method=\"get\">
+                                 <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
+                                 <input name=\"definition\"/><button>define</button></form>",
+                                word=word, def=def_div)).as_bytes());
+
+
+                }
+                Some(def_query) => {
+
+                    let definition : ~[&str] = def_query.split('+').collect();
+
+                    if self.checked(self.validate_def(word, definition)) {
+
+                        self.write_def(word, definition);
+
+                        let def_div = self.checked(self.get_def(word));
+
+                        content.get_body().set_bytes(
+                        html_body(
+                            format!(
+                                "<div class=\"word\">{word}</div>
+                                 {def}
+                                 <form action=\"define\" method=\"get\">
+                                 <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
+                                 <input name=\"definition\"/><button>define</button></form>",
+                                word=word, def=def_div)).as_bytes());
+
+
+
+
+                    } else {
+
+                        let def_div = self.checked(self.get_def(word));
+
+                        content.get_body().set_bytes(
+                        html_body(
+                            format!(
+                                "<div class=\"word\">{word}</div>
+                                 {def}
+                                 <div>invalid definition</div>
+                                 <form action=\"define\" method=\"get\">
+                                 <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
+                                 <input name=\"definition\"/><button>define</button></form>",
+                                word=word, def=def_div)).as_bytes());
+
+                    }
+                }
+            }
+
 
         } else {
             content.get_body().set_bytes(
