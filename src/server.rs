@@ -124,6 +124,19 @@ impl WebSession::Server for WebSessionImpl {
             let word = path.query.get(&~"word");
 
             // TODO check that `word` is actually a word.
+            {
+                let cursor = self.db.prepare(
+                    format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
+                    &None).unwrap();
+                if cursor.step_row().unwrap().is_none() {
+                    content.get_body().set_bytes(
+                        html_body(
+                            "<div> that's not a word </div>
+                           <form action=\"define\" method=\"get\">
+                           <input name=\"word\"/><button>go</button></form>").as_bytes());
+                    return context.done();
+                }
+            }
 
             content.get_body().set_bytes(
                 html_body(
