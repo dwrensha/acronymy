@@ -202,6 +202,42 @@ impl WebSessionImpl {
 
 }
 
+static lookup_form : &'static str =
+      r#"<form action="define" method="get">
+          <input name=\"word\"/><button>go</button></form>"#;
+
+fn define_form(word :&str) -> ~str {
+       format!("<form action=\"define\" method=\"get\">
+               <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
+               <input name=\"definition\"/><button>define</button></form>", word=word)
+}
+
+enum PageData<'a> {
+    NoWord,
+    WordAndDef(&'a str, &'a str, Option<&'a str>),
+}
+
+fn construct_html(page_data : PageData) -> ~str {
+    let mut result = StrBuf::new();
+    result.push_str(format!("<html>{}<body>", header));
+    match page_data {
+        NoWord => {
+            result.push_str("<div class=\"err\"> that's not a word </div>");
+        }
+        WordAndDef(word, def_div, _err) => {
+            result.push_str(format!("<div class=\"word\">{}</div>", word));
+
+            result.push_str(def_div);
+            result.push_str(define_form(word));
+        }
+    }
+
+    result.push_str(lookup_form);
+
+    result.push_str("</body></html>");
+    result.into_owned()
+}
+
 impl WebSession::Server for WebSessionImpl {
     fn get(&mut self, mut context : WebSession::GetContext) {
         println!("GET");
@@ -216,34 +252,23 @@ impl WebSession::Server for WebSessionImpl {
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else if path.path.as_slice() == "define" {
-            let word : ~str = path.query.get(&~"word").clone();
-
-            if !self.checked(self.is_word(word)) {
-                content.get_body().set_bytes(
-                    html_body(
-                        "<div class=\"err\"> that's not a word </div>
-                           <form action=\"define\" method=\"get\">
-                           <input name=\"word\"/><button>go</button></form>").as_bytes());
-                return context.done();
-            } else {
-
-            }
+            let word : ~str = match path.query.find(&~"word") {
+                Some(w) if self.checked(self.is_word(*w)) => {
+                    w.clone()
+                }
+                _ => {
+                    content.get_body().set_bytes(construct_html(NoWord).as_bytes());
+                    return context.done();
+                }
+            };
 
             match path.query.find(&~"definition") {
                 None => {
                     let def_div = self.checked(self.get_def(word));
 
-                    content.get_body().set_bytes(
-                        html_body(
-                            format!(
-                                "<div class=\"word\">{word}</div>
-                                 {def}
-                                 <form action=\"define\" method=\"get\">
-                                 <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
-                                 <input name=\"definition\"/><button>define</button></form>",
-                                word=word, def=def_div)).as_bytes());
-
-
+                    content.get_body().set_bytes(construct_html(WordAndDef(word.as_slice(),
+                                                                           def_div.as_slice(),
+                                                                           None)).as_bytes());
                 }
                 Some(def_query) => {
 
@@ -252,37 +277,20 @@ impl WebSession::Server for WebSessionImpl {
                     if self.checked(self.validate_def(word, definition)) {
 
                         self.checked(self.write_def(word, definition));
-
                         let def_div = self.checked(self.get_def(word));
-
                         content.get_body().set_bytes(
-                        html_body(
-                            format!(
-                                "<div class=\"word\">{word}</div>
-                                 {def}
-                                 <form action=\"define\" method=\"get\">
-                                 <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
-                                 <input name=\"definition\"/><button>define</button></form>",
-                                word=word, def=def_div)).as_bytes());
-
-
-
+                            construct_html(WordAndDef(word.as_slice(),
+                                                      def_div.as_slice(),
+                                                      None)).as_bytes());
 
                     } else {
 
                         let def_div = self.checked(self.get_def(word));
 
                         content.get_body().set_bytes(
-                        html_body(
-                            format!(
-                                "<div class=\"word\">{word}</div>
-                                 {def}
-                                 <div class=\"err\">invalid definition</div>
-                                 <form action=\"define\" method=\"get\">
-                                 <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
-                                 <input name=\"definition\"/><button>define</button></form>",
-                                word=word, def=def_div)).as_bytes());
-
+                            construct_html(WordAndDef(word.as_slice(),
+                                                      def_div.as_slice(),
+                                                      Some("invalid definition"))).as_bytes());
                     }
                 }
             }
