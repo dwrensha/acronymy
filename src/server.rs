@@ -50,34 +50,6 @@ impl UiSession::Server for WebSessionImpl {
 
 }
 
-static main_css : &'static str =
-    "body { font-family: Helvetica, Sans, Arial;
-            font-size: medium;
-             margin-left: auto;
-             margin-right: auto;
-             width: 600px;
-             text-align: center;
-     }
-    .word {
-        text-align: center;
-        font-size: 500%;
-     }
-     .err {
-       font-size: 90%;
-       color: #AA0000;
-     }
-     ";
-
-
-static header : &'static str =
-  r#"<head><title> acronymy </title><link rel="stylesheet" type="text/css" href="main.css" >
- <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
-  </head>"#;
-
-fn html_body(body :&str) -> ~str {
-    format!("<html>{}<body>{}</body></html>", header, body)
-}
-
 struct Path {
     path : ~str,
     query : HashMap<~str, ~str>,
@@ -126,7 +98,7 @@ impl WebSessionImpl {
         let cursor = try!(self.db.prepare(
             format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
             &None));
-        println!("got the cursor");
+
         return Ok(try!(cursor.step_row()).is_some());
     }
 
@@ -202,6 +174,35 @@ impl WebSessionImpl {
 
 }
 
+static main_css : &'static str =
+    "body { font-family: Helvetica, Sans, Arial;
+            font-size: medium;
+             margin-left: auto;
+             margin-right: auto;
+             width: 600px;
+             text-align: center;
+     }
+    .word {
+        text-align: center;
+        font-size: 500%;
+     }
+     .err {
+       font-size: 90%;
+       color: #AA0000;
+     }
+     .title {
+       text-align: center;
+       font-size:500%;
+     }
+     ";
+
+
+static header : &'static str =
+  r#"<head><title> acronymy </title><link rel="stylesheet" type="text/css" href="main.css" >
+ <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+  </head>"#;
+
+
 static lookup_form : &'static str =
       r#"<form action="define" method="get">
           <input name="word"/><button>go</button></form>"#;
@@ -215,6 +216,7 @@ fn define_form(word :&str) -> ~str {
 enum PageData<'a> {
     NoWord,
     WordAndDef(&'a str, &'a str, Option<&'a str>),
+    HomePage,
 }
 
 fn construct_html(page_data : PageData) -> ~str {
@@ -229,6 +231,10 @@ fn construct_html(page_data : PageData) -> ~str {
 
             result.push_str(def_div);
             result.push_str(define_form(word));
+        }
+        HomePage => {
+            result.push_str("<div class=\"title\">Acronymy</div>");
+            result.push_str("<div>A user-editable dictionary.</div>");
         }
     }
 
@@ -297,10 +303,7 @@ impl WebSession::Server for WebSessionImpl {
 
 
         } else {
-            content.get_body().set_bytes(
-                html_body(
-                    "<form action=\"define\" method=\"get\">
-                     <input name=\"word\"/><button>go</button></form>").as_bytes());
+            content.get_body().set_bytes(construct_html(HomePage).as_bytes());
         }
         context.done()
     }
