@@ -237,7 +237,7 @@ static header : &'static str =
 
 static lookup_form : &'static str =
       r#"<form action="define" method="get">
-          <input name="word" maxlength=\"100\"/><button>find word</button></form>"#;
+          <input name="word" maxlength="100"/><button>find word</button></form>"#;
 
 fn define_form(word :&str) -> ~str {
        format!("<form action=\"define\" method=\"get\">
