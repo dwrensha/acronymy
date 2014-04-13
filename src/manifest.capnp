@@ -11,7 +11,8 @@ const manifest :Package.Manifest = (
     title = (defaultText = "New Acronymy Instance"),
 
     command = (
-      executablePath = "/acronymy"
+      executablePath = "/acronymy",
+      args = ["--init", "/data.db", "/var/data.db"]
     )
   )],
 

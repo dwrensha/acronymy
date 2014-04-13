@@ -223,11 +223,15 @@ impl SturdyRefRestorer for Restorer {
 
 pub fn main() -> ::std::io::IoResult<()> {
 
-    let initdb_path = ::std::path::Path::new("/data.db");
-    let proddb_path = ::std::path::Path::new("/var/data.db");
+    let args = ::std::os::args();
 
-    if !proddb_path.exists() {
+    if args.len() == 4 && args[1].as_slice() == "--init" {
+        println!("initializing...");
+        let initdb_path = ::std::path::Path::new(args[2].as_slice());
+        let proddb_path = ::std::path::Path::new(args[3].as_slice());
+        println!("copying database from {} to {}", args[2], args[3]);
         try!(::std::io::fs::copy(&initdb_path, &proddb_path));
+        println!("success!");
     }
 
     let ifs = try!(FdStream::new(3));
