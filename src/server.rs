@@ -93,15 +93,27 @@ impl WebSession::Server for WebSessionImpl {
         println!("GET");
         let (params, results) = context.get();
         let raw_path = params.get_path();
-        println!("path = {}", raw_path);
         let content = results.init_content();
         content.set_mime_type("text/html");
 
         let path = parse_path(raw_path);
+        println!("path = {}", raw_path);
+        println!("{}, {}", path.path, path.query);
+
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else if path.path.as_slice() == "define" {
-            content.get_body().set_bytes("AWESOME".as_bytes());
+            if path.query.len() != 1 {
+                return context.fail();
+            }
+            let &(_, ref v) = path.query.get(0);
+
+            content.get_body().set_bytes(
+                html_body(
+                    "<div>AWESOME</div>
+                     <form action=\"define\" method=\"get\">
+                     <input name=\"word\"/><button>go</button></form>").as_bytes());
+
         } else {
             content.get_body().set_bytes(
                 html_body(
