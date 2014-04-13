@@ -16,9 +16,11 @@ mod init {
 
         let mut input = ::std::io::stdin();
         for line in input.lines() {
-            try!(db.exec(format!("INSERT INTO Words VALUES(\"{}\");", line.unwrap().trim())));
+            let word = line.unwrap().clone();
+            let trimmed = word.trim();
+            assert!(trimmed.is_alphanumeric(), "not alphanumeric: {}", trimmed);
+            try!(db.exec(format!("INSERT INTO Words VALUES(\"{}\");", trimmed)));
         }
-        println!("hello world");
         Ok(())
     }
 }
