@@ -221,12 +221,13 @@ static header : &'static str =
 
 static lookup_form : &'static str =
       r#"<form action="define" method="get">
-          <input name="word"/><button>find word</button></form>"#;
+          <input name="word" maxlength=\"100\"/><button>find word</button></form>"#;
 
 fn define_form(word :&str) -> ~str {
        format!("<form action=\"define\" method=\"get\">
                <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
-               <input name=\"definition\"/><button>submit definition</button></form>", word=word)
+               <input name=\"definition\" maxlength=\"2000\"/>
+                   <button>submit definition</button></form>", word=word)
 }
 
 enum PageData<'a> {
@@ -266,7 +267,6 @@ fn construct_html(page_data : PageData) -> ~str {
             result.push_str("<div>A user-editable, acronym-only dictionary.</div>");
             result.push_str(format!("<div>So far, we have defined {} out of {} words.</div>",
                                     num_defined, total));
-            result.push_str("<div><a href=\"https://github.com/dwrensha/acronymy\">source code</a></div>");
             result.push_str(lookup_form);
         }
     }
