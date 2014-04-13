@@ -204,7 +204,7 @@ impl WebSessionImpl {
 
 static lookup_form : &'static str =
       r#"<form action="define" method="get">
-          <input name=\"word\"/><button>go</button></form>"#;
+          <input name="word"/><button>go</button></form>"#;
 
 fn define_form(word :&str) -> ~str {
        format!("<form action=\"define\" method=\"get\">
