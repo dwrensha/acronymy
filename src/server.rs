@@ -205,12 +205,12 @@ static header : &'static str =
 
 static lookup_form : &'static str =
       r#"<form action="define" method="get">
-          <input name="word"/><button>go</button></form>"#;
+          <input name="word"/><button>find word</button></form>"#;
 
 fn define_form(word :&str) -> ~str {
        format!("<form action=\"define\" method=\"get\">
                <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
-               <input name=\"definition\"/><button>define</button></form>", word=word)
+               <input name=\"definition\"/><button>submit definition</button></form>", word=word)
 }
 
 enum PageData<'a> {
@@ -225,20 +225,23 @@ fn construct_html(page_data : PageData) -> ~str {
     match page_data {
         NoWord => {
             result.push_str("<div class=\"err\"> that's not a word </div>");
+            result.push_str(lookup_form);
+            result.push_str("<a href=\"\">home</a>");
         }
         WordAndDef(word, def_div, _err) => {
             result.push_str(format!("<div class=\"word\">{}</div>", word));
 
             result.push_str(def_div);
             result.push_str(define_form(word));
+            result.push_str("<a href=\"\">home</a>");
         }
         HomePage => {
             result.push_str("<div class=\"title\">Acronymy</div>");
             result.push_str("<div>A user-editable dictionary.</div>");
+            result.push_str(lookup_form);
         }
     }
 
-    result.push_str(lookup_form);
 
     result.push_str("</body></html>");
     result.into_owned()
@@ -377,6 +380,7 @@ pub fn main() -> ::std::io::IoResult<()> {
         println!("success!");
     }
 
+    // sandstorm launches us with a connection file descriptor 3
     let ifs = try!(FdStream::new(3));
     let ofs = try!(FdStream::new(3));
 
