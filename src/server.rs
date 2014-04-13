@@ -106,6 +106,16 @@ fn parse_path(path : &str) -> Path {
     return result;
 }
 
+impl WebSessionImpl {
+    fn is_word(&mut self, word : &str) -> sqlite3::SqliteResult<bool> {
+        let cursor = try!(self.db.prepare(
+            format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
+            &None));
+        println!("got the cursor");
+        return Ok(try!(cursor.step_row()).is_some());
+    }
+}
+
 impl WebSession::Server for WebSessionImpl {
     fn get(&mut self, mut context : WebSession::GetContext) {
         println!("GET");
@@ -121,14 +131,12 @@ impl WebSession::Server for WebSessionImpl {
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else if path.path.as_slice() == "define" {
-            let word = path.query.get(&~"word");
+            let word : ~str = path.query.get(&~"word").clone();
 
             // TODO check that `word` is actually a word.
-            {
-                let cursor = self.db.prepare(
-                    format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
-                    &None).unwrap();
-                if cursor.step_row().unwrap().is_none() {
+            match self.is_word(word) {
+                Err(e) => fail!("is_word error: {}", e),
+                Ok(false) => {
                     content.get_body().set_bytes(
                         html_body(
                             "<div> that's not a word </div>
@@ -136,6 +144,7 @@ impl WebSession::Server for WebSessionImpl {
                            <input name=\"word\"/><button>go</button></form>").as_bytes());
                     return context.done();
                 }
+                Ok(true) => {}
             }
 
             content.get_body().set_bytes(
