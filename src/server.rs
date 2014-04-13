@@ -195,6 +195,9 @@ static main_css : &'static str =
              width: 600px;
              text-align: center;
      }
+     div {
+          padding-bottom: 10pt;
+     }
     .word {
         text-align: center;
         font-size: 500%;
