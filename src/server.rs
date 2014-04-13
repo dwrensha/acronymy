@@ -135,7 +135,7 @@ impl WebSession::Server for WebSessionImpl {
 
             // TODO check that `word` is actually a word.
             match self.is_word(word) {
-                Err(e) => fail!("is_word error: {}", e),
+                Err(e) => fail!("is_word error: {}, {:?}", e, self.db.get_errmsg()),
                 Ok(false) => {
                     content.get_body().set_bytes(
                         html_body(
