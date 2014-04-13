@@ -151,7 +151,7 @@ impl WebSessionImpl {
             query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d));
             idx += 1;
         }
-        query.push_str("; COMMMIT;");
+        query.push_str("; COMMIT;");
 
         println!("query: {}", query);
 
