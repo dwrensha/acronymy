@@ -119,6 +119,8 @@ impl WebSessionImpl {
     }
 
     fn write_def(&self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<()> {
+
+        let time : i64 = ::time::get_time().sec;
         let mut query = StrBuf::new();
         query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word));
         query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
@@ -128,7 +130,9 @@ impl WebSessionImpl {
             query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d));
             idx += 1;
         }
-        query.push_str("; COMMIT;");
+        query.push_str(";");
+        query.push_str(format!("INSERT Into Log(Word, Timestamp) VALUES({},{})", word, time));
+        query.push_str("COMMIT;");
 
         println!("query: {}", query);
 
@@ -172,7 +176,7 @@ impl WebSessionImpl {
         }
     }
 
-    fn count_defs(&self) -> sqlite3::SqliteResult<(int, int)> {
+    fn count_defs(&self) -> sqlite3::SqliteResult<(int, int, Vec<~str>)> {
         let cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
         assert!(cursor.step() == sqlite3::SQLITE_ROW);
         let num_words = cursor.get_int(0);
@@ -181,7 +185,19 @@ impl WebSessionImpl {
         assert!(cursor.step() == sqlite3::SQLITE_ROW);
         let defined_words = cursor.get_int(0);
 
-        Ok((defined_words, num_words))
+        let mut recent_words = Vec::new();
+        let cursor = try!(
+            self.db.prepare("SELECT Word, Timestamp FROM Log ORDER BY Timestamp DESC LIMIT 5;", &None));
+        loop {
+            match try!(cursor.step_row()) {
+                None => break,
+                Some(row) => {
+                    let word : ~str = match row.get(&~"Word") {&sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
+                    recent_words.push(word);
+                }
+            }
+        }
+        Ok((defined_words, num_words, recent_words))
 
     }
 
@@ -233,7 +249,7 @@ fn define_form(word :&str) -> ~str {
 enum PageData<'a> {
     NoWord,
     WordAndDef(&'a str, &'a str, Option<&'a str>),
-    HomePage(int, int),
+    HomePage(int, int, Vec<~str>),
 }
 
 fn construct_html(page_data : PageData) -> ~str {
@@ -262,11 +278,23 @@ fn construct_html(page_data : PageData) -> ~str {
             result.push_str(define_form(word));
             result.push_str(home_link);
         }
-        HomePage(num_defined, total) => {
+        HomePage(num_defined, total, recent) => {
             result.push_str("<div class=\"title\">Acronymy</div>");
             result.push_str("<div>A user-editable, acronym-only dictionary.</div>");
             result.push_str(format!("<div>So far, we have defined {} out of {} words.</div>",
                                     num_defined, total));
+            if recent.len() > 0 {
+                result.push_str("<div>Recently modified words: ");
+                let mut idx = 0;
+                for w in recent.iter() {
+                    if idx != 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(format!("<a href=\"/define?word={word}\">{word}</a>", word=*w));
+                    idx += 1;
+                }
+                result.push_str(".</div>");
+            }
             result.push_str(lookup_form);
         }
     }
@@ -334,8 +362,8 @@ impl WebSession::Server for WebSessionImpl {
 
 
         } else {
-            let (num_defined, total) = self.checked(self.count_defs());
-            content.get_body().set_bytes(construct_html(HomePage(num_defined, total)).as_bytes());
+            let (num_defined, total, recent) = self.checked(self.count_defs());
+            content.get_body().set_bytes(construct_html(HomePage(num_defined, total, recent)).as_bytes());
         }
         context.done()
     }

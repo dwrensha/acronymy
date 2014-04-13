@@ -13,6 +13,7 @@ mod init {
 
         try!(db.exec("CREATE TABLE Words(Word TEXT);"));
         try!(db.exec("CREATE TABLE Definitions(Definee TEXT, Idx INTEGER, Definer TEXT);"));
+        try!(db.exec("CREATE TABLE Log(Word TEXT, Timestamp INTEGER);"));
 
         let mut input = ::std::io::stdin();
         for line in input.lines() {
