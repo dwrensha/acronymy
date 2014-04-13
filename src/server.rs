@@ -52,21 +52,60 @@ static header : &'static str =
  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
   </head>"#;
 
+fn html_body(body :&str) -> ~str {
+    format!("<html>{}<body>{}</body></html>", header, body)
+}
+
+struct Path {
+    path : ~str,
+    query : Vec<(~str,Vec<~str>)>,
+}
+
+impl Path {
+    fn new() -> Path {
+        Path { path : ~"", query : Vec::new() }
+    }
+}
+
+fn parse_path(path : &str) -> Path {
+    let mut result = Path::new();
+
+    let v : ~[&str] = path.splitn('?', 2).collect();
+    if v.len() == 0 {
+        return result;
+    }
+    if v.len() == 1 {
+        result.path = v[0].into_owned();
+    }
+    for attr in v[1].split('&') {
+        let a : ~[&str] = attr.splitn('=', 2).collect();
+        if a.len() == 2 {
+            result.query.push((a[0].into_owned(),
+                               a[1].split('+').map(|s| {s.into_owned() }).collect()));
+        }
+    }
+    return result;
+}
 
 impl WebSession::Server for WebSessionImpl {
     fn get(&mut self, mut context : WebSession::GetContext) {
         println!("GET");
         let (params, results) = context.get();
-        let path = params.get_path();
-        println!("path = {}", path);
+        let raw_path = params.get_path();
+        println!("path = {}", raw_path);
         let content = results.init_content();
         content.set_mime_type("text/html");
-        if path == "main.css" {
+
+        let path = parse_path(raw_path);
+        if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
+        } else if path.path.as_slice() == "define" {
+            content.get_body().set_bytes("AWESOME".as_bytes());
         } else {
             content.get_body().set_bytes(
-                format!("<html>{}<body><form action=\"define\" method=\"get\"><input name=\"word\"/><button>go</button></form></body></html>",
-                        header).as_bytes());
+                html_body(
+                    "<form action=\"define\" method=\"get\">
+                     <input name=\"word\"/><button>go</button></form>").as_bytes());
         }
         context.done()
     }
