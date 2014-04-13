@@ -1,6 +1,7 @@
 use grain_capnp::{PowerboxCapability, UiView, UiSession};
 use web_session_capnp::{WebSession};
 
+use collections::hashmap::HashMap;
 use capnp::capability::{ClientHook, FromServer};
 use capnp::AnyPointer;
 use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
@@ -44,6 +45,7 @@ static main_css : &'static str =
              margin-left: auto;
              margin-right: auto;
              width: 600px;
+             text-align: center;
      }
     .word {
         text-align: center;
@@ -63,12 +65,12 @@ fn html_body(body :&str) -> ~str {
 
 struct Path {
     path : ~str,
-    query : Vec<(~str,Vec<~str>)>,
+    query : HashMap<~str, ~str>,
 }
 
 impl Path {
     fn new() -> Path {
-        Path { path : ~"", query : Vec::new() }
+        Path { path : ~"", query : HashMap::new() }
     }
 }
 
@@ -86,8 +88,8 @@ fn parse_path(path : &str) -> Path {
     for attr in v[1].split('&') {
         let a : ~[&str] = attr.splitn('=', 2).collect();
         if a.len() == 2 {
-            result.query.push((a[0].into_owned(),
-                               a[1].split('+').map(|s| {s.into_owned() }).collect()));
+            result.query.insert(a[0].into_owned(),
+                                a[1].into_owned());
         }
     }
     return result;
@@ -108,18 +110,18 @@ impl WebSession::Server for WebSessionImpl {
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else if path.path.as_slice() == "define" {
-            if path.query.len() != 1 {
-                return context.fail();
-            }
-            let &(_, ref v) = path.query.get(0);
+            let word = path.query.get(&~"word");
+
+            // TODO check that `word` is actually a word.
 
             content.get_body().set_bytes(
                 html_body(
                     format!(
                         "<div class=\"word\">{word}</div>
-                     <form action=\"define/{word}\" method=\"get\">
-                     <input name=\"word\"/><button>define</button></form>",
-                        word=v.get(0))).as_bytes());
+                     <form action=\"define\" method=\"get\">
+                     <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
+                     <input name=\"definition\"/><button>define</button></form>",
+                        word=word)).as_bytes());
 
         } else {
             content.get_body().set_bytes(

@@ -1,6 +1,7 @@
 #![crate_id="acronymy"]
 #![crate_type = "bin"]
 
+extern crate collections;
 extern crate libc;
 extern crate capnp;
 extern crate capnp_rpc = "capnp-rpc";
