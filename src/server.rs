@@ -76,6 +76,7 @@ fn parse_path(path : &str) -> Path {
     }
     if v.len() == 1 {
         result.path = v[0].into_owned();
+        return result;
     }
     for attr in v[1].split('&') {
         let a : ~[&str] = attr.splitn('=', 2).collect();
