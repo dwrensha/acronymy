@@ -7,6 +7,7 @@ use capnp::AnyPointer;
 use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
 use capnp_rpc::capability::{LocalClient};
 
+use sqlite3;
 
 pub struct UiViewImpl;
 
@@ -25,7 +26,7 @@ impl UiView::Server for UiViewImpl {
         println!("asked for a new session!");
         let (_, results) = context.get();
 
-        let client : WebSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl);
+        let client : WebSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl::new());
         // we need to do this dance to upcast.
         results.set_session(UiSession::Client { client : client.client});
 
@@ -33,7 +34,17 @@ impl UiView::Server for UiViewImpl {
     }
 }
 
-pub struct WebSessionImpl;
+pub struct WebSessionImpl {
+    db : sqlite3::Database,
+}
+
+impl WebSessionImpl {
+    pub fn new() -> WebSessionImpl {
+        WebSessionImpl {
+            db : sqlite3::open("/var/data.db").unwrap(),
+        }
+    }
+}
 
 impl UiSession::Server for WebSessionImpl {
 

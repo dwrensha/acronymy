@@ -5,6 +5,7 @@ extern crate collections;
 extern crate libc;
 extern crate capnp;
 extern crate capnp_rpc = "capnp-rpc";
+extern crate sqlite3;
 
 pub mod grain_capnp;
 pub mod util_capnp;
