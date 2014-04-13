@@ -222,18 +222,28 @@ enum PageData<'a> {
 fn construct_html(page_data : PageData) -> ~str {
     let mut result = StrBuf::new();
     result.push_str(format!("<html>{}<body>", header));
+
+    static home_link : &'static str = "<a href=\"/\">home</a>";
     match page_data {
         NoWord => {
             result.push_str("<div class=\"err\"> that's not a word </div>");
             result.push_str(lookup_form);
-            result.push_str("<a href=\"\">home</a>");
+            result.push_str(home_link);
         }
-        WordAndDef(word, def_div, _err) => {
+        WordAndDef(word, def_div, err) => {
             result.push_str(format!("<div class=\"word\">{}</div>", word));
 
             result.push_str(def_div);
+
+            match err {
+                None => {}
+                Some(e) => {
+                    result.push_str(format!("<div class=\"err\">{}</div>", e));
+                }
+            }
+
             result.push_str(define_form(word));
-            result.push_str("<a href=\"\">home</a>");
+            result.push_str(home_link);
         }
         HomePage => {
             result.push_str("<div class=\"title\">Acronymy</div>");
@@ -241,7 +251,6 @@ fn construct_html(page_data : PageData) -> ~str {
             result.push_str(lookup_form);
         }
     }
-
 
     result.push_str("</body></html>");
     result.into_owned()
