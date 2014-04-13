@@ -246,7 +246,7 @@ impl WebSession::Server for WebSessionImpl {
 
                     if self.checked(self.validate_def(word, definition)) {
 
-                        self.write_def(word, definition);
+                        self.checked(self.write_def(word, definition));
 
                         let def_div = self.checked(self.get_def(word));
 
