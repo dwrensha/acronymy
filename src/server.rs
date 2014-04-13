@@ -172,6 +172,19 @@ impl WebSessionImpl {
         }
     }
 
+    fn count_defs(&self) -> sqlite3::SqliteResult<(int, int)> {
+        let cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
+        assert!(cursor.step() == sqlite3::SQLITE_ROW);
+        let num_words = cursor.get_int(0);
+
+        let cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Definitions WHERE Idx = 0;", &None));
+        assert!(cursor.step() == sqlite3::SQLITE_ROW);
+        let defined_words = cursor.get_int(0);
+
+        Ok((defined_words, num_words))
+
+    }
+
 }
 
 static main_css : &'static str =
@@ -216,7 +229,7 @@ fn define_form(word :&str) -> ~str {
 enum PageData<'a> {
     NoWord,
     WordAndDef(&'a str, &'a str, Option<&'a str>),
-    HomePage,
+    HomePage(int, int),
 }
 
 fn construct_html(page_data : PageData) -> ~str {
@@ -245,9 +258,12 @@ fn construct_html(page_data : PageData) -> ~str {
             result.push_str(define_form(word));
             result.push_str(home_link);
         }
-        HomePage => {
+        HomePage(num_defined, total) => {
             result.push_str("<div class=\"title\">Acronymy</div>");
-            result.push_str("<div>A user-editable dictionary.</div>");
+            result.push_str("<div>A user-editable, acronym-only dictionary.</div>");
+            result.push_str(format!("<div>So far, we have defined {} out of {} words.</div>",
+                                    num_defined, total));
+            result.push_str("<div><a href=\"https://github.com/dwrensha/acronymy\">source code</a></div>");
             result.push_str(lookup_form);
         }
     }
@@ -315,7 +331,8 @@ impl WebSession::Server for WebSessionImpl {
 
 
         } else {
-            content.get_body().set_bytes(construct_html(HomePage).as_bytes());
+            let (num_defined, total) = self.checked(self.count_defs());
+            content.get_body().set_bytes(construct_html(HomePage(num_defined, total)).as_bytes());
         }
         context.done()
     }
