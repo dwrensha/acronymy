@@ -44,7 +44,12 @@ static main_css : &'static str =
              margin-left: auto;
              margin-right: auto;
              width: 600px;
-     }";
+     }
+    .word {
+        text-align: center;
+        font-size: 500%;
+     }
+     ";
 
 
 static header : &'static str =
@@ -110,9 +115,11 @@ impl WebSession::Server for WebSessionImpl {
 
             content.get_body().set_bytes(
                 html_body(
-                    "<div>AWESOME</div>
-                     <form action=\"define\" method=\"get\">
-                     <input name=\"word\"/><button>go</button></form>").as_bytes());
+                    format!(
+                        "<div class=\"word\">{word}</div>
+                     <form action=\"define/{word}\" method=\"get\">
+                     <input name=\"word\"/><button>define</button></form>",
+                        word=v.get(0))).as_bytes());
 
         } else {
             content.get_body().set_bytes(
