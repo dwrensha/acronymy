@@ -12,5 +12,5 @@ Acronymy is written in Rust and can be deployed as a web app on the
 [Sandstorm](https://sandstorm.io) platform.
 
 
-Dependencies: [capnpproto-rust](https://github.com/dwrensha/capnproto-rust),
+Dependencies: [capnproto-rust](https://github.com/dwrensha/capnproto-rust),
 [rustsqlite](https://github.com/linuxfood/rustsqlite).
