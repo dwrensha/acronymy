@@ -84,13 +84,6 @@ fn parse_path(path : &str) -> Path {
 
 impl WebSessionImpl {
 
-    fn checked<T>(&self, result : sqlite3::SqliteResult<T>) -> T {
-        match result {
-            Err(e) => {fail!("database error: {}, {:?}", e, self.db.get_errmsg()) }
-            Ok(v) => { return v; }
-        }
-    }
-
     fn is_word(&self, word : &str) -> sqlite3::SqliteResult<bool> {
 
         if ! word.is_alphanumeric() { return Ok(false); }
@@ -201,6 +194,48 @@ impl WebSessionImpl {
 
     }
 
+
+    fn construct_page_data(&self, path : &Path) -> sqlite3::SqliteResult<PageData> {
+        if path.path.as_slice() == "define" {
+            let word : ~str = match path.query.find(&~"word") {
+                Some(w) if try!(self.is_word(*w)) => {
+                    w.clone()
+                }
+                _ => {
+                    return Ok(Error(~"<div class=\"err\"> that's not a word </div>"))
+                }
+            };
+
+            match path.query.find(&~"definition") {
+                None => {
+                    let def_div = try!(self.get_def(word));
+
+                    return Ok(WordAndDef(word, def_div, None));
+                }
+                Some(def_query) => {
+
+                    let definition : ~[&str] = def_query.split('+').collect();
+
+                    if try!(self.validate_def(word, definition)) {
+
+                        try!(self.write_def(word, definition));
+                        let def_div = try!(self.get_def(word));
+                        return Ok(WordAndDef(word,
+                                             def_div,
+                                             None));
+                    } else {
+                        let def_div = try!(self.get_def(word));
+                        return Ok(WordAndDef(word, def_div, Some(~"invalid definition")))
+                    }
+                }
+            }
+
+        } else {
+            let (num_defined, total, recent) = try!(self.count_defs());
+            return Ok(HomePage(num_defined, total, recent));
+        }
+    }
+
 }
 
 static main_css : &'static str =
@@ -246,9 +281,9 @@ fn define_form(word :&str) -> ~str {
                    <button>submit definition</button></form>", word=word)
 }
 
-enum PageData<'a> {
-    NoWord,
-    WordAndDef(&'a str, &'a str, Option<&'a str>),
+enum PageData {
+    Error(~str),
+    WordAndDef(~str, ~str, Option<~str>),
     HomePage(int, int, Vec<~str>),
 }
 
@@ -258,8 +293,8 @@ fn construct_html(page_data : PageData) -> ~str {
 
     static home_link : &'static str = "<a href=\"/\">home</a>";
     match page_data {
-        NoWord => {
-            result.push_str("<div class=\"err\"> that's not a word </div>");
+        Error(e) => {
+            result.push_str(format!("<div class=\"err\"> {} </div>", e));
             result.push_str(lookup_form);
             result.push_str(home_link);
         }
@@ -316,54 +351,12 @@ impl WebSession::Server for WebSessionImpl {
 
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
-        } else if path.path.as_slice() == "define" {
-            let word : ~str = match path.query.find(&~"word") {
-                Some(w) if self.checked(self.is_word(*w)) => {
-                    w.clone()
-                }
-                _ => {
-                    content.get_body().set_bytes(construct_html(NoWord).as_bytes());
-                    return context.done();
-                }
-            };
-
-            match path.query.find(&~"definition") {
-                None => {
-                    let def_div = self.checked(self.get_def(word));
-
-                    content.get_body().set_bytes(construct_html(WordAndDef(word.as_slice(),
-                                                                           def_div.as_slice(),
-                                                                           None)).as_bytes());
-                }
-                Some(def_query) => {
-
-                    let definition : ~[&str] = def_query.split('+').collect();
-
-                    if self.checked(self.validate_def(word, definition)) {
-
-                        self.checked(self.write_def(word, definition));
-                        let def_div = self.checked(self.get_def(word));
-                        content.get_body().set_bytes(
-                            construct_html(WordAndDef(word.as_slice(),
-                                                      def_div.as_slice(),
-                                                      None)).as_bytes());
-
-                    } else {
-
-                        let def_div = self.checked(self.get_def(word));
-
-                        content.get_body().set_bytes(
-                            construct_html(WordAndDef(word.as_slice(),
-                                                      def_div.as_slice(),
-                                                      Some("invalid definition"))).as_bytes());
-                    }
-                }
-            }
-
-
         } else {
-            let (num_defined, total, recent) = self.checked(self.count_defs());
-            content.get_body().set_bytes(construct_html(HomePage(num_defined, total, recent)).as_bytes());
+            let page_data = match self.construct_page_data(&path) {
+                Err(e) => { Error(format!("database error: {} ({})", e, self.db.get_errmsg())) }
+                Ok(page_data) => { page_data }
+            };
+            content.get_body().set_bytes(construct_html(page_data).as_bytes());
         }
         context.done()
     }
