@@ -202,7 +202,7 @@ impl WebSessionImpl {
                     w.clone()
                 }
                 _ => {
-                    return Ok(Error(~"<div class=\"err\"> that's not a word </div>"))
+                    return Ok(Error(~"that's not a word"))
                 }
             };
 
