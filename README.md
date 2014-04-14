@@ -11,3 +11,6 @@ and "dog" might be defined as "dutiful obedient guardian".
 Acronymy is written in Rust and can be deployed as a web app on the
 [Sandstorm](https://sandstorm.io) platform.
 
+
+Dependencies: [capnpproto-rust](https://github.com/dwrensha/capnproto-rust),
+[rustsqlite](https://github.com/linuxfood/rustsqlite).
