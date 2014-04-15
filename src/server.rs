@@ -124,7 +124,8 @@ impl WebSessionImpl {
             idx += 1;
         }
         query.push_str(";");
-        query.push_str(format!("INSERT Into Log(Word, Timestamp) VALUES(\"{}\",{});", word, time));
+        query.push_str(format!("DELETE FROM Log WHERE Word=\"{}\";", word));
+        query.push_str(format!("INSERT INTO Log(Word, Timestamp) VALUES(\"{}\",{});", word, time));
         query.push_str("COMMIT;");
 
         println!("query: {}", query);
