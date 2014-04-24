@@ -50,38 +50,6 @@ impl UiSession::Server for WebSessionImpl {
 
 }
 
-struct Path {
-    path : ~str,
-    query : HashMap<~str, ~str>,
-}
-
-impl Path {
-    fn new() -> Path {
-        Path { path : ~"", query : HashMap::new() }
-    }
-}
-
-fn parse_path(path : &str) -> Path {
-    let mut result = Path::new();
-
-    let v : ~[&str] = path.splitn('?', 2).collect();
-    if v.len() == 0 {
-        return result;
-    }
-    result.path = v[0].into_owned();
-    if v.len() == 1 {
-        return result;
-    }
-    for attr in v[1].split('&') {
-        let a : ~[&str] = attr.splitn('=', 2).collect();
-        if a.len() == 2 {
-            result.query.insert(a[0].into_owned(),
-                                a[1].into_owned());
-        }
-    }
-    return result;
-}
-
 impl WebSessionImpl {
 
     fn is_word(&self, word : &str) -> sqlite3::SqliteResult<bool> {
@@ -196,9 +164,15 @@ impl WebSessionImpl {
     }
 
 
-    fn construct_page_data(&self, path : &Path) -> sqlite3::SqliteResult<PageData> {
+    fn construct_page_data(&self, path : &::url::Path) -> sqlite3::SqliteResult<PageData> {
         if path.path.as_slice() == "define" {
-            let word : ~str = match path.query.find(&~"word") {
+
+            let mut query_map = HashMap::<~str, ~str>::new();
+            for &(ref k, ref v) in path.query.iter() {
+                query_map.insert(k.clone(), v.clone());
+            }
+
+            let word : ~str = match query_map.find(&~"word") {
                 Some(w) if try!(self.is_word(*w)) => {
                     w.clone()
                 }
@@ -207,7 +181,7 @@ impl WebSessionImpl {
                 }
             };
 
-            match path.query.find(&~"definition") {
+            match query_map.find(&~"definition") {
                 None => {
                     let def_div = try!(self.get_def(word));
 
@@ -347,7 +321,11 @@ impl WebSession::Server for WebSessionImpl {
         let content = results.init_content();
         content.set_mime_type("text/html");
 
-        let path = parse_path(raw_path);
+        let path = match ::url::path_from_str(raw_path) {
+            Err(_e) => ::url::Path::new("".to_owned(), Vec::new(), None),
+            Ok(p) => p,
+        };
+
         println!("path = {}", raw_path);
 
         if raw_path == "main.css" {
