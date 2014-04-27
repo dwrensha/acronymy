@@ -26,7 +26,15 @@ impl UiView::Server for UiViewImpl {
         println!("asked for a new session!");
         let (_, results) = context.get();
 
-        let client : WebSession::Client = FromServer::new(None::<LocalClient>, ~WebSessionImpl::new());
+
+        let client : WebSession::Client = match WebSessionImpl::new() {
+            Ok(session) => {
+                FromServer::new(None::<LocalClient>, ~session)
+            }
+            Err(_e) => {
+                return context.fail();
+            }
+        };
         // we need to do this dance to upcast.
         results.set_session(UiSession::Client { client : client.client});
 
@@ -39,15 +47,12 @@ pub struct WebSessionImpl {
 }
 
 impl WebSessionImpl {
-    pub fn new() -> WebSessionImpl {
-        let db = match sqlite3::open("/var/data.db") {
-            Ok(db) => db,
-            Err(e) => fail!("could not open database: {}", e),
-        };
+    pub fn new() -> sqlite3::SqliteResult<WebSessionImpl> {
+        let db = try!(sqlite3::open("/var/data.db"));
         db.set_busy_timeout(1000); // try for a least a second
-        WebSessionImpl {
+        Ok(WebSessionImpl {
             db : db,
-        }
+        })
     }
 }
 
