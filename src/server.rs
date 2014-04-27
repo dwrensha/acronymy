@@ -40,8 +40,13 @@ pub struct WebSessionImpl {
 
 impl WebSessionImpl {
     pub fn new() -> WebSessionImpl {
+        let db = match sqlite3::open("/var/data.db") {
+            Ok(db) => db,
+            Err(e) => fail!("could not open database: {}", e),
+        };
+        db.set_busy_timeout(1000); // try for a least a second
         WebSessionImpl {
-            db : sqlite3::open("/var/data.db").unwrap(),
+            db : db,
         }
     }
 }

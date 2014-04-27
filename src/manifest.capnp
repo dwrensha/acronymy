@@ -3,7 +3,7 @@
 using Package = import "package.capnp";
 
 const manifest :Package.Manifest = (
-  appVersion = 1,
+  appVersion = 2,
 
   actions = [(
 
