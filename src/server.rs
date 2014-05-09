@@ -199,11 +199,11 @@ impl WebSessionImpl {
                 }
                 Some(def_query) => {
 
-                    let definition : ~[&str] = def_query.split('+').collect();
+                    let definition : Vec<&str> = def_query.split('+').collect();
 
-                    if try!(self.validate_def(word, definition)) {
+                    if try!(self.validate_def(word, definition.as_slice())) {
 
-                        try!(self.write_def(word, definition));
+                        try!(self.write_def(word, definition.as_slice()));
                         let def_div = try!(self.get_def(word));
                         return Ok(WordAndDef(word,
                                              def_div,
@@ -410,11 +410,11 @@ pub fn main() -> ::std::io::IoResult<()> {
 
     let args = ::std::os::args();
 
-    if args.len() == 4 && args[1].as_slice() == "--init" {
+    if args.len() == 4 && args.get(1).as_slice() == "--init" {
         println!("initializing...");
-        let initdb_path = ::std::path::Path::new(args[2].as_slice());
-        let proddb_path = ::std::path::Path::new(args[3].as_slice());
-        println!("copying database from {} to {}", args[2], args[3]);
+        let initdb_path = ::std::path::Path::new(args.get(2).as_slice());
+        let proddb_path = ::std::path::Path::new(args.get(3).as_slice());
+        println!("copying database from {} to {}", args.get(2), args.get(3));
         try!(::std::io::fs::copy(&initdb_path, &proddb_path));
         println!("success!");
     }
