@@ -29,7 +29,7 @@ impl UiView::Server for UiViewImpl {
 
         let client : WebSession::Client = match WebSessionImpl::new() {
             Ok(session) => {
-                FromServer::new(None::<LocalClient>, ~session)
+                FromServer::new(None::<LocalClient>, box session)
             }
             Err(_e) => {
                 return context.fail();
@@ -125,8 +125,8 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let definer = match row.get(&~"Definer") { &sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
-                    let idx = match row.get(&~"Idx") { &sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
+                    let definer = match row.get(&"Definer".to_owned()) { &sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
+                    let idx = match row.get(&"Idx".to_owned()) { &sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
 
                     map.insert(idx, definer);
                 }
@@ -134,7 +134,7 @@ impl WebSessionImpl {
         }
 
         if map.len() != word.len() {
-            return Ok(~"<div>this word has no definition yet</div>");
+            return Ok("<div>this word has no definition yet</div>".to_owned());
         } else {
 
             let mut result = StrBuf::new();
@@ -164,7 +164,7 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let word : ~str = match row.get(&~"Word") {&sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
+                    let word : ~str = match row.get(&"Word".to_owned()) {&sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
                     recent_words.push(word);
                 }
             }
@@ -182,16 +182,16 @@ impl WebSessionImpl {
                 query_map.insert(k.clone(), v.clone());
             }
 
-            let word : ~str = match query_map.find(&~"word") {
+            let word : ~str = match query_map.find(&"word".to_owned()) {
                 Some(w) if try!(self.is_word(*w)) => {
                     w.clone()
                 }
                 _ => {
-                    return Ok(Error(~"that's not a word"))
+                    return Ok(Error("that's not a word".to_owned()))
                 }
             };
 
-            match query_map.find(&~"definition") {
+            match query_map.find(&"definition".to_owned()) {
                 None => {
                     let def_div = try!(self.get_def(word));
 
@@ -210,7 +210,7 @@ impl WebSessionImpl {
                                              None));
                     } else {
                         let def_div = try!(self.get_def(word));
-                        return Ok(WordAndDef(word, def_div, Some(~"invalid definition")))
+                        return Ok(WordAndDef(word, def_div, Some("invalid definition".to_owned())))
                     }
                 }
             }
@@ -370,7 +370,7 @@ impl WebSession::Server for WebSessionImpl {
 
 
 pub struct FdStream {
-    inner : ~::std::rt::rtio::RtioFileStream:Send,
+    inner : Box<::std::rt::rtio::RtioFileStream:Send>,
 }
 
 impl FdStream {
@@ -396,9 +396,9 @@ impl Writer for FdStream {
 pub struct Restorer;
 
 impl SturdyRefRestorer for Restorer {
-    fn restore(&self, obj_id : AnyPointer::Reader) -> Option<~ClientHook:Send> {
+    fn restore(&self, obj_id : AnyPointer::Reader) -> Option<Box<ClientHook:Send>> {
         if obj_id.is_null() {
-            let client : UiView::Client = FromServer::new(None::<LocalClient>, ~UiViewImpl);
+            let client : UiView::Client = FromServer::new(None::<LocalClient>, box UiViewImpl);
             Some(client.client.hook)
         } else {
             None
