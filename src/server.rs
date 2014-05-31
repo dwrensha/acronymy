@@ -67,7 +67,7 @@ impl WebSessionImpl {
         if ! word.is_alphanumeric() { return Ok(false); }
 
         let cursor = try!(self.db.prepare(
-            format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
+            format!("SELECT * FROM Words WHERE Word = \"{}\";", word).as_slice(),
             &None));
 
         return Ok(try!(cursor.step_row()).is_some());
@@ -92,18 +92,18 @@ impl WebSessionImpl {
     fn write_def(&self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<()> {
 
         let time : i64 = ::time::get_time().sec;
-        let mut query = StrBuf::new();
-        query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word));
+        let mut query = String::new();
+        query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word).as_slice());
         query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
         let mut idx = 0;
         for &d in definition.iter() {
             if idx != 0 { query.push_str(","); }
-            query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d));
+            query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d).as_slice());
             idx += 1;
         }
         query.push_str(";");
-        query.push_str(format!("DELETE FROM Log WHERE Word=\"{}\";", word));
-        query.push_str(format!("INSERT INTO Log(Word, Timestamp) VALUES(\"{}\",{});", word, time));
+        query.push_str(format!("DELETE FROM Log WHERE Word=\"{}\";", word).as_slice());
+        query.push_str(format!("INSERT INTO Log(Word, Timestamp) VALUES(\"{}\",{});", word, time).as_slice());
         query.push_str("COMMIT;");
 
         println!("query: {}", query);
@@ -113,20 +113,20 @@ impl WebSessionImpl {
         return Ok(());
     }
 
-    fn get_def(&self, word : &str) -> sqlite3::SqliteResult<~str> {
+    fn get_def(&self, word : &str) -> sqlite3::SqliteResult<String> {
 
         let cursor = try!(self.db.prepare(
-            format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word),
+            format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word).as_slice(),
             &None));
 
-        let mut map = HashMap::<int, ~str>::new();
+        let mut map = HashMap::<int, String>::new();
 
         loop {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let definer = match row.get(&"Definer".to_owned()) { &sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
-                    let idx = match row.get(&"Idx".to_owned()) { &sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
+                    let definer = match row.get(&"Definer".to_string()) { &sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
+                    let idx = match row.get(&"Idx".to_string()) { &sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
 
                     map.insert(idx, definer);
                 }
@@ -134,21 +134,21 @@ impl WebSessionImpl {
         }
 
         if map.len() != word.len() {
-            return Ok("<div>this word has no definition yet</div>".to_owned());
+            return Ok("<div>this word has no definition yet</div>".to_string());
         } else {
 
-            let mut result = StrBuf::new();
+            let mut result = String::new();
             result.push_str("<div>");
             for idx in range::<int>(0, word.len() as int) {
                 let definer : &str = map.get(&idx).as_slice();
-                result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer));
+                result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer).as_slice());
             }
             result.push_str("</div>");
-            return Ok(result.into_owned());
+            return Ok(result.into_string());
         }
     }
 
-    fn count_defs(&self) -> sqlite3::SqliteResult<(int, int, Vec<~str>)> {
+    fn count_defs(&self) -> sqlite3::SqliteResult<(int, int, Vec<String>)> {
         let cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
         assert!(cursor.step() == sqlite3::SQLITE_ROW);
         let num_words = cursor.get_int(0);
@@ -164,7 +164,7 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let word : ~str = match row.get(&"Word".to_owned()) {&sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
+                    let word : String = match row.get(&"Word".to_string()) {&sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
                     recent_words.push(word);
                 }
             }
@@ -177,40 +177,40 @@ impl WebSessionImpl {
     fn construct_page_data(&self, path : &::url::Path) -> sqlite3::SqliteResult<PageData> {
         if path.path.as_slice() == "define" {
 
-            let mut query_map = HashMap::<~str, ~str>::new();
+            let mut query_map = HashMap::<String, String>::new();
             for &(ref k, ref v) in path.query.iter() {
                 query_map.insert(k.clone(), v.clone());
             }
 
-            let word : ~str = match query_map.find(&"word".to_owned()) {
-                Some(w) if try!(self.is_word(*w)) => {
+            let word : String = match query_map.find(&"word".to_string()) {
+                Some(w) if try!(self.is_word(w.as_slice())) => {
                     w.clone()
                 }
                 _ => {
-                    return Ok(Error("that's not a word".to_owned()))
+                    return Ok(Error("that's not a word".to_string()))
                 }
             };
 
-            match query_map.find(&"definition".to_owned()) {
+            match query_map.find(&"definition".to_string()) {
                 None => {
-                    let def_div = try!(self.get_def(word));
+                    let def_div = try!(self.get_def(word.as_slice()));
 
                     return Ok(WordAndDef(word, def_div, None));
                 }
                 Some(def_query) => {
 
-                    let definition : Vec<&str> = def_query.split('+').collect();
+                    let definition : Vec<&str> = def_query.as_slice().split('+').collect();
 
-                    if try!(self.validate_def(word, definition.as_slice())) {
+                    if try!(self.validate_def(word.as_slice(), definition.as_slice())) {
 
-                        try!(self.write_def(word, definition.as_slice()));
-                        let def_div = try!(self.get_def(word));
+                        try!(self.write_def(word.as_slice(), definition.as_slice()));
+                        let def_div = try!(self.get_def(word.as_slice()));
                         return Ok(WordAndDef(word,
                                              def_div,
                                              None));
                     } else {
-                        let def_div = try!(self.get_def(word));
-                        return Ok(WordAndDef(word, def_div, Some("invalid definition".to_owned())))
+                        let def_div = try!(self.get_def(word.as_slice()));
+                        return Ok(WordAndDef(word, def_div, Some("invalid definition".to_string())))
                     }
                 }
             }
@@ -259,7 +259,7 @@ static lookup_form : &'static str =
       r#"<form action="define" method="get">
           <input name="word" maxlength="100"/><button>find word</button></form>"#;
 
-fn define_form(word :&str) -> ~str {
+fn define_form(word :&str) -> String {
        format!("<form action=\"define\" method=\"get\">
                <input name=\"word\" value=\"{word}\" type=\"hidden\"/>
                <input name=\"definition\" maxlength=\"2000\"/>
@@ -267,42 +267,42 @@ fn define_form(word :&str) -> ~str {
 }
 
 enum PageData {
-    Error(~str),
-    WordAndDef(~str, ~str, Option<~str>),
-    HomePage(int, int, Vec<~str>),
+    Error(String),
+    WordAndDef(String, String, Option<String>),
+    HomePage(int, int, Vec<String>),
 }
 
-fn construct_html(page_data : PageData) -> ~str {
-    let mut result = StrBuf::new();
-    result.push_str(format!("<html>{}<body>", header));
+fn construct_html(page_data : PageData) -> String {
+    let mut result = String::new();
+    result.push_str(format!("<html>{}<body>", header).as_slice());
 
     static home_link : &'static str = "<a href=\"/\">home</a>";
     match page_data {
         Error(e) => {
-            result.push_str(format!("<div class=\"err\"> {} </div>", e));
+            result.push_str(format!("<div class=\"err\"> {} </div>", e).as_slice());
             result.push_str(lookup_form);
             result.push_str(home_link);
         }
         WordAndDef(word, def_div, err) => {
-            result.push_str(format!("<div class=\"word\">{}</div>", word));
+            result.push_str(format!("<div class=\"word\">{}</div>", word).as_slice());
 
-            result.push_str(def_div);
+            result.push_str(def_div.as_slice());
 
             match err {
                 None => {}
                 Some(e) => {
-                    result.push_str(format!("<div class=\"err\">{}</div>", e));
+                    result.push_str(format!("<div class=\"err\">{}</div>", e).as_slice());
                 }
             }
 
-            result.push_str(define_form(word));
+            result.push_str(define_form(word.as_slice()).as_slice());
             result.push_str(home_link);
         }
         HomePage(num_defined, total, recent) => {
             result.push_str("<div class=\"title\">Acronymy</div>");
             result.push_str("<div>A user-editable, acronym-only dictionary.</div>");
             result.push_str(format!("<div>So far, we have defined {} out of {} words.</div>",
-                                    num_defined, total));
+                                    num_defined, total).as_slice());
             if recent.len() > 0 {
                 result.push_str("<div>Recently modified words: ");
                 let mut idx = 0;
@@ -310,7 +310,7 @@ fn construct_html(page_data : PageData) -> ~str {
                     if idx != 0 {
                         result.push_str(", ");
                     }
-                    result.push_str(format!("<a href=\"/define?word={word}\">{word}</a>", word=*w));
+                    result.push_str(format!("<a href=\"/define?word={word}\">{word}</a>", word=*w).as_slice());
                     idx += 1;
                 }
                 result.push_str(".</div>");
@@ -320,7 +320,7 @@ fn construct_html(page_data : PageData) -> ~str {
     }
 
     result.push_str("</body></html>");
-    result.into_owned()
+    result.into_string()
 }
 
 impl WebSession::Server for WebSessionImpl {
@@ -332,7 +332,7 @@ impl WebSession::Server for WebSessionImpl {
         content.set_mime_type("text/html");
 
         let path = match ::url::path_from_str(raw_path) {
-            Err(_e) => ::url::Path::new("".to_owned(), Vec::new(), None),
+            Err(_e) => ::url::Path::new("".to_string(), Vec::new(), None),
             Ok(p) => p,
         };
 
