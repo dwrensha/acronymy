@@ -1,7 +1,6 @@
-#![crate_id="acronymy"]
+#![crate_name="acronymy"]
 #![crate_type = "bin"]
 
-extern crate collections;
 extern crate libc;
 extern crate time;
 extern crate url;

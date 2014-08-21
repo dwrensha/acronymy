@@ -1,7 +1,7 @@
 use grain_capnp::{PowerboxCapability, UiView, UiSession};
 use web_session_capnp::{WebSession};
 
-use collections::hashmap::HashMap;
+use std::collections::hashmap::HashMap;
 use capnp::capability::{ClientHook, FromServer};
 use capnp::AnyPointer;
 use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
@@ -48,7 +48,7 @@ pub struct WebSessionImpl {
 
 impl WebSessionImpl {
     pub fn new() -> sqlite3::SqliteResult<WebSessionImpl> {
-        let db = try!(sqlite3::open("/var/data.db"));
+        let mut db = try!(sqlite3::open("/var/data.db"));
         db.set_busy_timeout(1000); // try for a least a second
         Ok(WebSessionImpl {
             db : db,
@@ -66,7 +66,7 @@ impl WebSessionImpl {
 
         if ! word.is_alphanumeric() { return Ok(false); }
 
-        let cursor = try!(self.db.prepare(
+        let mut cursor = try!(self.db.prepare(
             format!("SELECT * FROM Words WHERE Word = \"{}\";", word).as_slice(),
             &None));
 
@@ -79,7 +79,7 @@ impl WebSessionImpl {
 
         let mut idx = 0;
         for &d in definition.iter() {
-            if !(try!(self.is_word(d)) && d.len() > 0 && d[0] == word[idx]) {
+            if !(try!(self.is_word(d)) && d.len() > 0 && d.char_at(0) == word.char_at(idx)) {
                 return Ok(false);
             }
 
@@ -89,13 +89,13 @@ impl WebSessionImpl {
         return Ok(true);
     }
 
-    fn write_def(&self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<()> {
+    fn write_def(&mut self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<()> {
 
         let time : i64 = ::time::get_time().sec;
         let mut query = String::new();
         query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word).as_slice());
         query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
-        let mut idx = 0;
+        let mut idx = 0u;
         for &d in definition.iter() {
             if idx != 0 { query.push_str(","); }
             query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d).as_slice());
@@ -115,7 +115,7 @@ impl WebSessionImpl {
 
     fn get_def(&self, word : &str) -> sqlite3::SqliteResult<String> {
 
-        let cursor = try!(self.db.prepare(
+        let mut cursor = try!(self.db.prepare(
             format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word).as_slice(),
             &None));
 
@@ -125,8 +125,8 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let definer = match row.get(&"Definer".to_string()) { &sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
-                    let idx = match row.get(&"Idx".to_string()) { &sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
+                    let definer = match row["Definer".to_string()] { sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
+                    let idx = match row["Idx".to_string()] { sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
 
                     map.insert(idx, definer);
                 }
@@ -140,7 +140,7 @@ impl WebSessionImpl {
             let mut result = String::new();
             result.push_str("<div>");
             for idx in range::<int>(0, word.len() as int) {
-                let definer : &str = map.get(&idx).as_slice();
+                let definer : &str = map[idx].as_slice();
                 result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer).as_slice());
             }
             result.push_str("</div>");
@@ -149,22 +149,22 @@ impl WebSessionImpl {
     }
 
     fn count_defs(&self) -> sqlite3::SqliteResult<(int, int, Vec<String>)> {
-        let cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
+        let mut cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
         assert!(cursor.step() == sqlite3::SQLITE_ROW);
         let num_words = cursor.get_int(0);
 
-        let cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Definitions WHERE Idx = 0;", &None));
+        let mut cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Definitions WHERE Idx = 0;", &None));
         assert!(cursor.step() == sqlite3::SQLITE_ROW);
         let defined_words = cursor.get_int(0);
 
         let mut recent_words = Vec::new();
-        let cursor = try!(
+        let mut cursor = try!(
             self.db.prepare("SELECT Word, Timestamp FROM Log ORDER BY Timestamp DESC LIMIT 5;", &None));
         loop {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let word : String = match row.get(&"Word".to_string()) {&sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
+                    let word : String = match row["Word".to_string()] {sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
                     recent_words.push(word);
                 }
             }
@@ -174,7 +174,7 @@ impl WebSessionImpl {
     }
 
 
-    fn construct_page_data(&self, path : &::url::Path) -> sqlite3::SqliteResult<PageData> {
+    fn construct_page_data(&mut self, path : &::url::Path) -> sqlite3::SqliteResult<PageData> {
         if path.path.as_slice() == "define" {
 
             let mut query_map = HashMap::<String, String>::new();
@@ -305,7 +305,7 @@ fn construct_html(page_data : PageData) -> String {
                                     num_defined, total).as_slice());
             if recent.len() > 0 {
                 result.push_str("<div>Recently modified words: ");
-                let mut idx = 0;
+                let mut idx = 0u;
                 for w in recent.iter() {
                     if idx != 0 {
                         result.push_str(", ");
@@ -331,7 +331,7 @@ impl WebSession::Server for WebSessionImpl {
         let content = results.init_content();
         content.set_mime_type("text/html");
 
-        let path = match ::url::path_from_str(raw_path) {
+        let path = match ::url::Path::parse(raw_path) {
             Err(_e) => ::url::Path::new("".to_string(), Vec::new(), None),
             Ok(p) => p,
         };
@@ -368,35 +368,56 @@ impl WebSession::Server for WebSessionImpl {
 }
 
 
+// copied from libstd/io/mod.rs
+fn from_rtio_error(err: ::std::rt::rtio::IoError) -> ::std::io::IoError {
+    let ::std::rt::rtio::IoError { code, extra, detail } = err;
+    let mut ioerr = ::std::io::IoError::from_errno(code, false);
+    ioerr.detail = detail;
+    ioerr.kind = match ioerr.kind {
+        ::std::io::TimedOut if extra > 0 => ::std::io::ShortWrite(extra),
+        k => k,
+    };
+    return ioerr;
+}
+
 
 pub struct FdStream {
-    inner : Box<::std::rt::rtio::RtioFileStream:Send>,
+    inner : Box<::std::rt::rtio::RtioFileStream+Send>,
 }
 
 impl FdStream {
     pub fn new(fd : ::libc::c_int) -> ::std::io::IoResult<FdStream> {
-        ::std::rt::rtio::LocalIo::maybe_raise(|io| {
+        match ::std::rt::rtio::LocalIo::maybe_raise(|io| {
             Ok (FdStream { inner : io.fs_from_raw_fd(fd, ::std::rt::rtio::DontClose) })
-        })
+        }) {
+            Ok(s) => Ok(s),
+            Err(e) => Err(from_rtio_error(e))
+        }
     }
 }
 
 impl Reader for FdStream {
     fn read(&mut self, buf : &mut [u8]) -> ::std::io::IoResult<uint> {
-        self.inner.read(buf).map(|i| i as uint)
+        match self.inner.read(buf) {
+            Ok(i) => Ok(i as uint),
+            Err(e) => Err(from_rtio_error(e))
+        }
     }
 }
 
 impl Writer for FdStream {
     fn write(&mut self, buf : &[u8]) -> ::std::io::IoResult<()> {
-        self.inner.write(buf)
+        match self.inner.write(buf) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(from_rtio_error(e))
+        }
     }
 }
 
 pub struct Restorer;
 
 impl SturdyRefRestorer for Restorer {
-    fn restore(&self, obj_id : AnyPointer::Reader) -> Option<Box<ClientHook:Send>> {
+    fn restore(&self, obj_id : AnyPointer::Reader) -> Option<Box<ClientHook+Send>> {
         if obj_id.is_null() {
             let client : UiView::Client = FromServer::new(None::<LocalClient>, box UiViewImpl);
             Some(client.client.hook)
@@ -410,11 +431,11 @@ pub fn main() -> ::std::io::IoResult<()> {
 
     let args = ::std::os::args();
 
-    if args.len() == 4 && args.get(1).as_slice() == "--init" {
+    if args.len() == 4 && args[1].as_slice() == "--init" {
         println!("initializing...");
-        let initdb_path = ::std::path::Path::new(args.get(2).as_slice());
-        let proddb_path = ::std::path::Path::new(args.get(3).as_slice());
-        println!("copying database from {} to {}", args.get(2), args.get(3));
+        let initdb_path = ::std::path::Path::new(args[2].as_slice());
+        let proddb_path = ::std::path::Path::new(args[3].as_slice());
+        println!("copying database from {} to {}", args[2], args[3]);
         try!(::std::io::fs::copy(&initdb_path, &proddb_path));
         println!("success!");
     }
