@@ -9,9 +9,10 @@ const pkgdef :Spk.PackageDefinition = (
   # The package definition. Note that the spk tool looks specifically for the
   # "pkgdef" constant.
 
-  id = "qd72z4m2y8ug2kyhxh51s9ytqpkwgte59v3dj8xhmak8p2dzyfvh",
-  # Your app ID is actually its public key. The private key was placed in
-  # your keyring. All updates must be signed with the same key.
+
+
+  id = "7m2fcfn7qdyexs3jmn6vrdngcryeuc8y4fa6jpyj4fgwh5tq27ph",
+
 
   manifest = (
     # This manifest is included in your app package to tell Sandstorm
