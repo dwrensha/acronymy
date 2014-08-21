@@ -17,6 +17,7 @@ Dependencies: [capnproto-rust](https://github.com/dwrensha/capnproto-rust),
 
 ## Building
 
-
+```
 $ capnp compile -orust src/grain.capnp src/util.capnp src/web-session.capnp
 $ rustc src/main.rs -L ~/src/capnproto-rust/ -L ~/src/rustsqlite/
+```
