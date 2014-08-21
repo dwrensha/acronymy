@@ -4,13 +4,9 @@
 extern crate sqlite3;
 
 mod init {
-    use sqlite3::{open, SqliteResult};
+    use sqlite3::{open, Database, SqliteResult};
 
-    pub fn main() -> SqliteResult<()> {
-        let args = ::std::os::args();
-
-        let mut db = try!(open(args[1].as_slice()));
-
+    pub fn write_db(db : &mut Database) -> SqliteResult<()> {
         try!(db.exec("CREATE TABLE Words(Word TEXT);"));
         try!(db.exec("CREATE TABLE Definitions(Definee TEXT, Idx INTEGER, Definer TEXT);"));
         try!(db.exec("CREATE TABLE Log(Word TEXT, Timestamp INTEGER);"));
@@ -24,11 +20,27 @@ mod init {
         }
         Ok(())
     }
+
+    pub fn open_db() -> SqliteResult<Database> {
+        let args = ::std::os::args();
+        return open(args[1].as_slice());
+    }
+
+    pub fn main() {
+        match open_db() {
+            Ok(mut db) => {
+               match write_db(&mut db) {
+                   Ok(()) => {}
+                   Err(e) => { println!("error: {}, ({})", e, db.get_errmsg()) }
+               }
+            }
+            Err(e) => {
+               println!("could not open database: {}", e);
+            }
+        }
+    }
 }
 
 pub fn main() {
-    match init::main() {
-        Ok(()) => {}
-        Err(e) => { println!("error: {}", e) }
-    }
+    init::main();
 }
