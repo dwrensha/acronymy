@@ -17,7 +17,12 @@ Dependencies: [capnproto-rust](https://github.com/dwrensha/capnproto-rust),
 
 ## Building
 
+You must supply your own word list.
+
 ```
 $ capnp compile -orust src/grain.capnp src/util.capnp src/web-session.capnp
+$ rustc src/initdb.rs -L ~/src/rustsqlite/
+$ ./initdb data.db < words.txt
 $ rustc src/main.rs -L ~/src/capnproto-rust/ -L ~/src/rustsqlite/
+$ spk dev
 ```
