@@ -1,4 +1,4 @@
-#![crate_id="initdb"]
+#![crate_name="initdb"]
 #![crate_type = "bin"]
 
 extern crate sqlite3;
@@ -9,7 +9,7 @@ mod init {
     pub fn main() -> SqliteResult<()> {
         let args = ::std::os::args();
 
-        let db = try!(open(args[1]));
+        let mut db = try!(open(args[1].as_slice()));
 
         try!(db.exec("CREATE TABLE Words(Word TEXT);"));
         try!(db.exec("CREATE TABLE Definitions(Definee TEXT, Idx INTEGER, Definer TEXT);"));
@@ -18,9 +18,9 @@ mod init {
         let mut input = ::std::io::stdin();
         for line in input.lines() {
             let word = line.unwrap().clone();
-            let trimmed = word.trim();
+            let trimmed = word.as_slice().trim();
             assert!(trimmed.is_alphanumeric(), "not alphanumeric: {}", trimmed);
-            try!(db.exec(format!("INSERT INTO Words VALUES(\"{}\");", trimmed)));
+            try!(db.exec(format!("INSERT INTO Words VALUES(\"{}\");", trimmed).as_slice()));
         }
         Ok(())
     }
