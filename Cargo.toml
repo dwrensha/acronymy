@@ -1,0 +1,22 @@
+[package]
+
+name = "acronymy"
+version = "0.0.1"
+authors = [ "David Renshaw <dwrenshaw@gmail.com>" ]
+build = "make src/grain_capnp.rs"
+
+[[bin]]
+
+name = "acronymy"
+path = "src/main.rs"
+
+
+[dependencies.sqlite3]
+git = "https://github.com/linuxfood/rustsqlite.git"
+
+
+[dependencies.capnp]
+git = "https://github.com/dwrensha/capnproto-rust.git"
+
+[dependencies.capnp-rpc]
+git = "https://github.com/dwrensha/capnp-rpc-rust.git"
