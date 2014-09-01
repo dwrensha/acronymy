@@ -1,9 +1,9 @@
-use grain_capnp::{PowerboxCapability, UiView, UiSession};
-use web_session_capnp::{WebSession};
+use grain_capnp::{powerbox_capability, ui_view, ui_session};
+use web_session_capnp::{web_session};
 
 use std::collections::hashmap::HashMap;
 use capnp::capability::{ClientHook, FromServer};
-use capnp::AnyPointer;
+use capnp::any_pointer;
 use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
 use capnp_rpc::capability::{LocalClient};
 
@@ -11,23 +11,23 @@ use sqlite3;
 
 pub struct UiViewImpl;
 
-impl PowerboxCapability::Server for UiViewImpl {
-    fn get_powerbox_info(&mut self, context : PowerboxCapability::GetPowerboxInfoContext) {
+impl powerbox_capability::Server for UiViewImpl {
+    fn get_powerbox_info(&mut self, context : powerbox_capability::GetPowerboxInfoContext) {
         context.done()
     }
 }
 
-impl UiView::Server for UiViewImpl {
-    fn get_view_info(&mut self, context : UiView::GetViewInfoContext) {
+impl ui_view::Server for UiViewImpl {
+    fn get_view_info(&mut self, context : ui_view::GetViewInfoContext) {
         context.done()
     }
 
-    fn new_session(&mut self, mut context : UiView::NewSessionContext) {
+    fn new_session(&mut self, mut context : ui_view::NewSessionContext) {
         println!("asked for a new session!");
         let (_, results) = context.get();
 
 
-        let client : WebSession::Client = match WebSessionImpl::new() {
+        let client : web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
                 FromServer::new(None::<LocalClient>, box session)
             }
@@ -36,7 +36,7 @@ impl UiView::Server for UiViewImpl {
             }
         };
         // we need to do this dance to upcast.
-        results.set_session(UiSession::Client { client : client.client});
+        results.set_session(ui_session::Client { client : client.client});
 
         context.done()
     }
@@ -56,7 +56,7 @@ impl WebSessionImpl {
     }
 }
 
-impl UiSession::Server for WebSessionImpl {
+impl ui_session::Server for WebSessionImpl {
 
 }
 
@@ -323,8 +323,8 @@ fn construct_html(page_data : PageData) -> String {
     result.into_string()
 }
 
-impl WebSession::Server for WebSessionImpl {
-    fn get(&mut self, mut context : WebSession::GetContext) {
+impl web_session::Server for WebSessionImpl {
+    fn get(&mut self, mut context : web_session::GetContext) {
         println!("GET");
         let (params, results) = context.get();
         let raw_path = params.get_path();
@@ -349,19 +349,19 @@ impl WebSession::Server for WebSessionImpl {
         }
         context.done()
     }
-    fn post(&mut self, context : WebSession::PostContext) {
+    fn post(&mut self, context : web_session::PostContext) {
         println!("POST");
         context.done()
     }
-    fn put(&mut self, context : WebSession::PutContext) {
+    fn put(&mut self, context : web_session::PutContext) {
         println!("PUT");
         context.done()
     }
-    fn delete(&mut self, context : WebSession::DeleteContext) {
+    fn delete(&mut self, context : web_session::DeleteContext) {
         println!("DELETE");
         context.done()
     }
-    fn open_web_socket(&mut self, context : WebSession::OpenWebSocketContext) {
+    fn open_web_socket(&mut self, context : web_session::OpenWebSocketContext) {
         println!("OPEN WEB SOCKET");
         context.done()
     }
@@ -417,9 +417,9 @@ impl Writer for FdStream {
 pub struct Restorer;
 
 impl SturdyRefRestorer for Restorer {
-    fn restore(&self, obj_id : AnyPointer::Reader) -> Option<Box<ClientHook+Send>> {
+    fn restore(&self, obj_id : any_pointer::Reader) -> Option<Box<ClientHook+Send>> {
         if obj_id.is_null() {
-            let client : UiView::Client = FromServer::new(None::<LocalClient>, box UiViewImpl);
+            let client : ui_view::Client = FromServer::new(None::<LocalClient>, box UiViewImpl);
             Some(client.client.hook)
         } else {
             None
