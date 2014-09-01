@@ -174,12 +174,17 @@ impl WebSessionImpl {
     }
 
 
-    fn construct_page_data(&mut self, path : &::url::Path) -> sqlite3::SqliteResult<PageData> {
-        if path.path.as_slice() == "define" {
+    fn construct_page_data(&mut self, path : Vec<String>, query: Option<String>) -> sqlite3::SqliteResult<PageData> {
+        if path.len() == 1 && path[0].as_slice() == "define" {
 
             let mut query_map = HashMap::<String, String>::new();
-            for &(ref k, ref v) in path.query.iter() {
-                query_map.insert(k.clone(), v.clone());
+            match query {
+                None => {}
+                Some(q) => {
+                    for &(ref k, ref v) in ::url::form_urlencoded::parse_str(q.as_slice()).iter() {
+                        query_map.insert(k.clone(), v.clone());
+                    }
+                }
             }
 
             let word : String = match query_map.find(&"word".to_string()) {
@@ -331,9 +336,9 @@ impl web_session::Server for WebSessionImpl {
         let content = results.init_content();
         content.set_mime_type("text/html");
 
-        let path = match ::url::Path::parse(raw_path) {
-            Err(_e) => ::url::Path::new("".to_string(), Vec::new(), None),
-            Ok(p) => p,
+        let (path, query) = match ::url::parse_path(raw_path) {
+            Err(_e) => (Vec::new(), None),
+            Ok((p, q, _f)) => (p, q),
         };
 
         println!("path = {}", raw_path);
@@ -341,7 +346,7 @@ impl web_session::Server for WebSessionImpl {
         if raw_path == "main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else {
-            let page_data = match self.construct_page_data(&path) {
+            let page_data = match self.construct_page_data(path, query) {
                 Err(e) => { Error(format!("database error: {} ({})", e, self.db.get_errmsg())) }
                 Ok(page_data) => { page_data }
             };

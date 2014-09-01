@@ -11,6 +11,9 @@ name = "acronymy"
 path = "src/main.rs"
 
 
+[dependencies.url]
+git = "https://github.com/servo/rust-url"
+
 [dependencies.sqlite3]
 git = "https://github.com/linuxfood/rustsqlite.git"
 
