@@ -76,7 +76,7 @@ const initCommand :Spk.Manifest.Command = (
 
 const continueCommand :Spk.Manifest.Command = (
   # Here we define the command used to start up your server.
-  argv = ["/acronymy"],
+  argv = ["/target/acronymy"],
   environ = [
     # Note that this defines the *entire* environment seen by your app.
     (key = "PATH", value = "/usr/local/bin:/usr/bin:/bin")

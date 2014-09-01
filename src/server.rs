@@ -74,9 +74,7 @@ impl WebSessionImpl {
     }
 
     fn validate_def(&self, word : &str, definition : &[&str]) -> sqlite3::SqliteResult<bool> {
-
         if definition.len() != word.len() { return Ok(false); }
-
         let mut idx = 0;
         for &d in definition.iter() {
             if !(try!(self.is_word(d)) && d.len() > 0 && d.char_at(0) == word.char_at(idx)) {
@@ -177,6 +175,7 @@ impl WebSessionImpl {
     fn construct_page_data(&mut self, path : Vec<String>, query: Option<String>) -> sqlite3::SqliteResult<PageData> {
         if path.len() == 1 && path[0].as_slice() == "define" {
 
+
             let mut query_map = HashMap::<String, String>::new();
             match query {
                 None => {}
@@ -195,7 +194,6 @@ impl WebSessionImpl {
                     return Ok(Error("that's not a word".to_string()))
                 }
             };
-
             match query_map.find(&"definition".to_string()) {
                 None => {
                     let def_div = try!(self.get_def(word.as_slice()));
@@ -204,7 +202,7 @@ impl WebSessionImpl {
                 }
                 Some(def_query) => {
 
-                    let definition : Vec<&str> = def_query.as_slice().split('+').collect();
+                    let definition : Vec<&str> = def_query.as_slice().split(' ').collect();
 
                     if try!(self.validate_def(word.as_slice(), definition.as_slice())) {
 
@@ -332,18 +330,18 @@ impl web_session::Server for WebSessionImpl {
     fn get(&mut self, mut context : web_session::GetContext) {
         println!("GET");
         let (params, results) = context.get();
-        let raw_path = params.get_path();
+        let raw_path = format!("/{}", params.get_path());
         let content = results.init_content();
         content.set_mime_type("text/html");
 
-        let (path, query) = match ::url::parse_path(raw_path) {
+        let (path, query) = match ::url::parse_path(raw_path.as_slice()) {
             Err(_e) => (Vec::new(), None),
             Ok((p, q, _f)) => (p, q),
         };
 
         println!("path = {}", raw_path);
 
-        if raw_path == "main.css" {
+        if raw_path.as_slice() == "/main.css" {
             content.get_body().set_bytes(main_css.as_bytes())
         } else {
             let page_data = match self.construct_page_data(path, query) {
