@@ -8,9 +8,9 @@ extern crate capnp;
 extern crate capnp_rpc = "capnp-rpc";
 extern crate sqlite3;
 
-pub mod grain_capnp;
-pub mod util_capnp;
-pub mod web_session_capnp;
+extern crate acronymy_include_generated;
+
+pub use acronymy_include_generated::{grain_capnp, util_capnp, web_session_capnp};
 
 pub mod server;
 
