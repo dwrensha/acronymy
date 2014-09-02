@@ -10,6 +10,11 @@ build = "make src/grain_capnp.rs"
 name = "acronymy"
 path = "src/main.rs"
 
+[[bin]]
+
+name = "initdb"
+path = "src/initdb.rs"
+
 
 [dependencies.url]
 git = "https://github.com/servo/rust-url"

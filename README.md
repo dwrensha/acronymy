@@ -11,18 +11,14 @@ Acronymy is written in Rust and can be deployed as a web app on the
 [Sandstorm](https://sandstorm.io) platform.
 
 
-Dependencies: [capnproto-rust](https://github.com/dwrensha/capnproto-rust),
-[rustsqlite](https://github.com/linuxfood/rustsqlite).
-
-
 ## Building
+
+Make sure that you have `capnp` and `capnpc-rust` installed.
 
 You must supply your own word list.
 
 ```
-$ capnp compile -orust src/grain.capnp src/util.capnp src/web-session.capnp
-$ rustc src/initdb.rs -L ~/src/rustsqlite/
-$ ./initdb data.db < words.txt
-$ rustc src/main.rs -L ~/src/capnproto-rust/ -L ~/src/rustsqlite/
+$ cargo build
+$ ./target/initdb data.db < words.txt
 $ spk dev
 ```
