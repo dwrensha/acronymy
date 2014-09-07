@@ -5,7 +5,7 @@ extern crate libc;
 extern crate time;
 extern crate url;
 extern crate capnp;
-extern crate capnp_rpc = "capnp-rpc";
+extern crate "capnp-rpc" as capnp_rpc;
 extern crate sqlite3;
 
 extern crate acronymy_include_generated;
