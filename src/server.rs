@@ -226,7 +226,7 @@ impl WebSessionImpl {
 
 }
 
-static main_css : &'static str =
+const MAIN_CSS : &'static str =
     "body { font-family: Helvetica, Sans, Arial;
             font-size: medium;
              margin-left: auto;
@@ -252,13 +252,13 @@ static main_css : &'static str =
      ";
 
 
-static header : &'static str =
+const HEADER : &'static str =
   r#"<head><title> acronymy </title><link rel="stylesheet" type="text/css" href="main.css" >
  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
   </head>"#;
 
 
-static lookup_form : &'static str =
+const LOOKUP_FORM : &'static str =
       r#"<form action="define" method="get">
           <input name="word" maxlength="100"/><button>find word</button></form>"#;
 
@@ -277,14 +277,14 @@ enum PageData {
 
 fn construct_html(page_data : PageData) -> String {
     let mut result = String::new();
-    result.push_str(format!("<html>{}<body>", header).as_slice());
+    result.push_str(format!("<html>{}<body>", HEADER).as_slice());
 
-    static home_link : &'static str = "<a href=\"/\">home</a>";
+    const HOME_LINK : &'static str = "<a href=\"/\">home</a>";
     match page_data {
         Error(e) => {
             result.push_str(format!("<div class=\"err\"> {} </div>", e).as_slice());
-            result.push_str(lookup_form);
-            result.push_str(home_link);
+            result.push_str(LOOKUP_FORM);
+            result.push_str(HOME_LINK);
         }
         WordAndDef(word, def_div, err) => {
             result.push_str(format!("<div class=\"word\">{}</div>", word).as_slice());
@@ -299,7 +299,7 @@ fn construct_html(page_data : PageData) -> String {
             }
 
             result.push_str(define_form(word.as_slice()).as_slice());
-            result.push_str(home_link);
+            result.push_str(HOME_LINK);
         }
         HomePage(num_defined, total, recent) => {
             result.push_str("<div class=\"title\">Acronymy</div>");
@@ -318,7 +318,7 @@ fn construct_html(page_data : PageData) -> String {
                 }
                 result.push_str(".</div>");
             }
-            result.push_str(lookup_form);
+            result.push_str(LOOKUP_FORM);
         }
     }
 
@@ -342,7 +342,7 @@ impl web_session::Server for WebSessionImpl {
         println!("path = {}", raw_path);
 
         if raw_path.as_slice() == "/main.css" {
-            content.get_body().set_bytes(main_css.as_bytes())
+            content.get_body().set_bytes(MAIN_CSS.as_bytes())
         } else {
             let page_data = match self.construct_page_data(path, query) {
                 Err(e) => { Error(format!("database error: {} ({})", e, self.db.get_errmsg())) }
