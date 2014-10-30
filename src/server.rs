@@ -123,8 +123,8 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let definer = match row["Definer".to_string()] { sqlite3::Text(ref t) => t.clone(), _ => fail!(), };
-                    let idx = match row["Idx".to_string()] { sqlite3::Integer(ref i) => i.clone(), _ => fail!(), };
+                    let definer = match row["Definer".to_string()] { sqlite3::Text(ref t) => t.clone(), _ => panic!(), };
+                    let idx = match row["Idx".to_string()] { sqlite3::Integer(ref i) => i.clone(), _ => panic!(), };
 
                     map.insert(idx, definer);
                 }
@@ -162,7 +162,7 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let word : String = match row["Word".to_string()] {sqlite3::Text(ref t) => t.clone(), _ => fail!(),};
+                    let word : String = match row["Word".to_string()] {sqlite3::Text(ref t) => t.clone(), _ => panic!(),};
                     recent_words.push(word);
                 }
             }
