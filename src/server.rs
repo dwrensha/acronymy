@@ -1,7 +1,7 @@
 use grain_capnp::{powerbox_capability, ui_view, ui_session};
 use web_session_capnp::{web_session};
 
-use std::collections::hashmap::HashMap;
+use std::collections::hash_map::HashMap;
 use capnp::capability::{ClientHook, FromServer};
 use capnp::any_pointer;
 use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
@@ -186,7 +186,7 @@ impl WebSessionImpl {
                 }
             }
 
-            let word : String = match query_map.find(&"word".to_string()) {
+            let word : String = match query_map.get(&"word".to_string()) {
                 Some(w) if try!(self.is_word(w.as_slice())) => {
                     w.clone()
                 }
@@ -194,7 +194,7 @@ impl WebSessionImpl {
                     return Ok(Error("that's not a word".to_string()))
                 }
             };
-            match query_map.find(&"definition".to_string()) {
+            match query_map.get(&"definition".to_string()) {
                 None => {
                     let def_div = try!(self.get_def(word.as_slice()));
 

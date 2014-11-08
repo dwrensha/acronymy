@@ -8,9 +8,17 @@ extern crate capnp;
 extern crate "capnp-rpc" as capnp_rpc;
 extern crate sqlite3;
 
-extern crate acronymy_include_generated;
+pub mod grain_capnp {
+  include!(concat!(env!("OUT_DIR"), "/grain_capnp.rs"))
+}
 
-pub use acronymy_include_generated::{grain_capnp, util_capnp, web_session_capnp};
+pub mod util_capnp {
+  include!(concat!(env!("OUT_DIR"), "/util_capnp.rs"))
+}
+
+pub mod web_session_capnp {
+  include!(concat!(env!("OUT_DIR"), "/web_session_capnp.rs"))
+}
 
 pub mod server;
 
