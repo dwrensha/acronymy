@@ -370,50 +370,85 @@ impl web_session::Server for WebSessionImpl {
     }
 }
 
-
-// copied from libstd/io/mod.rs
-fn from_rtio_error(err: ::std::rt::rtio::IoError) -> ::std::io::IoError {
-    let ::std::rt::rtio::IoError { code, extra, detail } = err;
-    let mut ioerr = ::std::io::IoError::from_errno(code, false);
-    ioerr.detail = detail;
-    ioerr.kind = match ioerr.kind {
-        ::std::io::TimedOut if extra > 0 => ::std::io::ShortWrite(extra),
-        k => k,
-    };
-    return ioerr;
+// copied from libstd/sys/unix/mod.rs
+#[inline]
+pub fn retry<I: PartialEq + ::std::num::One + Neg<I>> (f: || -> I) -> I {
+    let minus_one = -::std::num::one::<I>();
+    loop {
+        let n = f();
+        if n == minus_one && ::std::os::errno() == ::libc::EINTR as uint { }
+        else { return n }
+    }
 }
+
+// copied from libstd/sys/common/mod.rs
+pub fn keep_going(data: &[u8], f: |*const u8, uint| -> i64) -> i64 {
+    let origamt = data.len();
+    let mut data = data.as_ptr();
+    let mut amt = origamt;
+    while amt > 0 {
+        let ret = retry(|| f(data, amt));
+        if ret == 0 {
+            break
+        } else if ret != -1 {
+            amt -= ret as uint;
+            data = unsafe { data.offset(ret as int) };
+        } else {
+            return ret;
+        }
+    }
+    return (origamt - amt) as i64;
+}
+
 
 
 pub struct FdStream {
-    inner : Box<::std::rt::rtio::RtioFileStream+Send>,
+    fd : ::libc::c_int,
 }
 
 impl FdStream {
-    pub fn new(fd : ::libc::c_int) -> ::std::io::IoResult<FdStream> {
-        match ::std::rt::rtio::LocalIo::maybe_raise(|io| {
-            Ok (FdStream { inner : io.fs_from_raw_fd(fd, ::std::rt::rtio::DontClose) })
-        }) {
-            Ok(s) => Ok(s),
-            Err(e) => Err(from_rtio_error(e))
-        }
+    pub fn new(fd : ::libc::c_int) -> FdStream {
+        FdStream { fd : fd }
     }
 }
 
 impl Reader for FdStream {
     fn read(&mut self, buf : &mut [u8]) -> ::std::io::IoResult<uint> {
-        match self.inner.read(buf) {
-            Ok(i) => Ok(i as uint),
-            Err(e) => Err(from_rtio_error(e))
+        let ret = retry(|| unsafe {
+            ::libc::read(self.fd,
+                       buf.as_mut_ptr() as *mut ::libc::c_void,
+                       buf.len() as ::libc::size_t)
+        });
+        if ret == 0 {
+            Err(::std::io::IoError {
+                kind: ::std::io::EndOfFile,
+                desc: "end of file",
+                detail: None,
+            })
+        } else if ret < 0 {
+//            Err(super::last_error())
+            panic!()
+        } else {
+            Ok(ret as uint)
         }
     }
 }
 
 impl Writer for FdStream {
     fn write(&mut self, buf : &[u8]) -> ::std::io::IoResult<()> {
-        match self.inner.write(buf) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(from_rtio_error(e))
+        let ret = keep_going(buf, |buf, len| {
+            unsafe {
+                ::libc::write(self.fd, buf as *const ::libc::c_void,
+                              len as ::libc::size_t) as i64
+            }
+        });
+        if ret < 0 {
+            panic!()
+            //Err(super::last_error())
+        } else {
+            Ok(())
         }
+
     }
 }
 
@@ -444,8 +479,8 @@ pub fn main() -> ::std::io::IoResult<()> {
     }
 
     // sandstorm launches us with a connection file descriptor 3
-    let ifs = try!(FdStream::new(3));
-    let ofs = try!(FdStream::new(3));
+    let ifs = FdStream::new(3);
+    let ofs = FdStream::new(3);
 
     let connection_state = RpcConnectionState::new();
     connection_state.run(ifs, ofs, Restorer);
