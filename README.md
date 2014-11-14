@@ -13,8 +13,7 @@ Acronymy is written in Rust and can be deployed as a web app on the
 
 ## Building
 
-Make sure that you have [Cap'n Proto](https://github.com/kentonv/capnproto)
-and [capnproto-rust](https://github.com/dwrensha/capnproto-rust) installed.
+Make sure that you have [Cap'n Proto](https://github.com/kentonv/capnproto) installed.
 
 You must supply your own word list.
 
