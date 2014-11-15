@@ -372,11 +372,11 @@ impl web_session::Server for WebSessionImpl {
 
 // copied from libstd/sys/unix/mod.rs
 #[inline]
-pub fn retry<I: PartialEq + ::std::num::One + Neg<I>> (f: || -> I) -> I {
-    let minus_one = -::std::num::one::<I>();
+pub fn retry<T: ::std::num::SignedInt> (f: || -> T) -> T {
+    let one: T = ::std::num::Int::one();
     loop {
         let n = f();
-        if n == minus_one && ::std::os::errno() == ::libc::EINTR as uint { }
+        if n == -one && ::std::os::errno() == ::libc::EINTR as uint { }
         else { return n }
     }
 }
