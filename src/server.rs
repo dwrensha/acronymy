@@ -123,8 +123,8 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let definer = match row["Definer".to_string()] { sqlite3::Text(ref t) => t.clone(), _ => panic!(), };
-                    let idx = match row["Idx".to_string()] { sqlite3::Integer(ref i) => i.clone(), _ => panic!(), };
+                    let definer = match row["Definer".to_string()] { sqlite3::BindArg::Text(ref t) => t.clone(), _ => panic!(), };
+                    let idx = match row["Idx".to_string()] { sqlite3::BindArg::Integer(ref i) => i.clone(), _ => panic!(), };
 
                     map.insert(idx, definer);
                 }
@@ -148,11 +148,11 @@ impl WebSessionImpl {
 
     fn count_defs(&self) -> sqlite3::SqliteResult<(int, int, Vec<String>)> {
         let mut cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
-        assert!(cursor.step() == sqlite3::SQLITE_ROW);
+        assert!(cursor.step() == sqlite3::ResultCode::SQLITE_ROW);
         let num_words = cursor.get_int(0);
 
         let mut cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Definitions WHERE Idx = 0;", &None));
-        assert!(cursor.step() == sqlite3::SQLITE_ROW);
+        assert!(cursor.step() == sqlite3::ResultCode::SQLITE_ROW);
         let defined_words = cursor.get_int(0);
 
         let mut recent_words = Vec::new();
@@ -162,7 +162,7 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let word : String = match row["Word".to_string()] {sqlite3::Text(ref t) => t.clone(), _ => panic!(),};
+                    let word : String = match row["Word".to_string()] {sqlite3::BindArg::Text(ref t) => t.clone(), _ => panic!(),};
                     recent_words.push(word);
                 }
             }
@@ -191,14 +191,14 @@ impl WebSessionImpl {
                     w.clone()
                 }
                 _ => {
-                    return Ok(Error("that's not a word".to_string()))
+                    return Ok(PageData::Error("that's not a word".to_string()))
                 }
             };
             match query_map.get(&"definition".to_string()) {
                 None => {
                     let def_div = try!(self.get_def(word.as_slice()));
 
-                    return Ok(WordAndDef(word, def_div, None));
+                    return Ok(PageData::WordAndDef(word, def_div, None));
                 }
                 Some(def_query) => {
 
@@ -208,19 +208,19 @@ impl WebSessionImpl {
 
                         try!(self.write_def(word.as_slice(), definition.as_slice()));
                         let def_div = try!(self.get_def(word.as_slice()));
-                        return Ok(WordAndDef(word,
-                                             def_div,
-                                             None));
+                        return Ok(PageData::WordAndDef(word,
+                                                       def_div,
+                                                       None));
                     } else {
                         let def_div = try!(self.get_def(word.as_slice()));
-                        return Ok(WordAndDef(word, def_div, Some("invalid definition".to_string())))
+                        return Ok(PageData::WordAndDef(word, def_div, Some("invalid definition".to_string())))
                     }
                 }
             }
 
         } else {
             let (num_defined, total, recent) = try!(self.count_defs());
-            return Ok(HomePage(num_defined, total, recent));
+            return Ok(PageData::HomePage(num_defined, total, recent));
         }
     }
 
@@ -281,12 +281,12 @@ fn construct_html(page_data : PageData) -> String {
 
     const HOME_LINK : &'static str = "<a href=\"/\">home</a>";
     match page_data {
-        Error(e) => {
+        PageData::Error(e) => {
             result.push_str(format!("<div class=\"err\"> {} </div>", e).as_slice());
             result.push_str(LOOKUP_FORM);
             result.push_str(HOME_LINK);
         }
-        WordAndDef(word, def_div, err) => {
+        PageData::WordAndDef(word, def_div, err) => {
             result.push_str(format!("<div class=\"word\">{}</div>", word).as_slice());
 
             result.push_str(def_div.as_slice());
@@ -301,7 +301,7 @@ fn construct_html(page_data : PageData) -> String {
             result.push_str(define_form(word.as_slice()).as_slice());
             result.push_str(HOME_LINK);
         }
-        HomePage(num_defined, total, recent) => {
+        PageData::HomePage(num_defined, total, recent) => {
             result.push_str("<div class=\"title\">Acronymy</div>");
             result.push_str("<div>A user-editable, acronym-only dictionary.</div>");
             result.push_str(format!("<div>So far, we have defined {} out of {} words.</div>",
@@ -345,7 +345,7 @@ impl web_session::Server for WebSessionImpl {
             content.get_body().set_bytes(MAIN_CSS.as_bytes())
         } else {
             let page_data = match self.construct_page_data(path, query) {
-                Err(e) => { Error(format!("database error: {} ({})", e, self.db.get_errmsg())) }
+                Err(e) => { PageData::Error(format!("database error: {} ({})", e, self.db.get_errmsg())) }
                 Ok(page_data) => { page_data }
             };
             content.get_body().set_bytes(construct_html(page_data).as_bytes());
