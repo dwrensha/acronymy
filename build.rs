@@ -6,5 +6,5 @@ fn main() {
     ::capnpc::compile(prefix.clone(),
                       &[Path::new("schema/grain.capnp"),
                         Path::new("schema/util.capnp"),
-                        Path::new("schema/web-session.capnp")]);
+                        Path::new("schema/web-session.capnp")]).unwrap();
 }

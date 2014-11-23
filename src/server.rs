@@ -180,7 +180,7 @@ impl WebSessionImpl {
             match query {
                 None => {}
                 Some(q) => {
-                    for &(ref k, ref v) in ::url::form_urlencoded::parse_str(q.as_slice()).iter() {
+                    for &(ref k, ref v) in ::url::form_urlencoded::parse(q.as_bytes()).iter() {
                         query_map.insert(k.clone(), v.clone());
                     }
                 }
