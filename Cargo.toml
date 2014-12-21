@@ -15,20 +15,14 @@ path = "src/main.rs"
 name = "initdb"
 path = "src/initdb.rs"
 
-[dependencies.time]
-git = "http://github.com/rust-lang/time"
-
-[dependencies.url]
-git = "https://github.com/servo/rust-url"
-
 [dependencies.sqlite3]
 git = "https://github.com/linuxfood/rustsqlite.git"
 
-[build-dependencies.capnpc]
-git = "https://github.com/dwrensha/capnpc-rust.git"
+[build-dependencies]
+capnpc = "0.0.12"
 
-[dependencies.capnp]
-git = "https://github.com/dwrensha/capnproto-rust.git"
-
-[dependencies.capnp-rpc]
-git = "https://github.com/dwrensha/capnp-rpc-rust.git"
+[dependencies]
+capnp = "0.0.11"
+capnp-rpc = "0.0.6"
+url = "0.2.6"
+time = "0.1.3"

@@ -24,7 +24,7 @@ impl ui_view::Server for UiViewImpl {
 
     fn new_session(&mut self, mut context : ui_view::NewSessionContext) {
         println!("asked for a new session!");
-        let (_, results) = context.get();
+        let (_, mut results) = context.get();
 
 
         let client : web_session::Client = match WebSessionImpl::new() {
@@ -331,7 +331,7 @@ impl web_session::Server for WebSessionImpl {
         println!("GET");
         let (params, results) = context.get();
         let raw_path = format!("/{}", params.get_path());
-        let content = results.init_content();
+        let mut content = results.init_content();
         content.set_mime_type("text/html");
 
         let (path, query) = match ::url::parse_path(raw_path.as_slice()) {

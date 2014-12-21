@@ -12,7 +12,7 @@ mod init {
         try!(db.exec("CREATE TABLE Log(Word TEXT, Timestamp INTEGER);"));
 
         let mut input = ::std::io::stdin();
-        for line in input.lines() {
+        for line in input.lock().lines() {
             let word = line.unwrap().clone();
             let trimmed = word.as_slice().trim();
             assert!(trimmed.is_alphanumeric(), "not alphanumeric: {}", trimmed);
