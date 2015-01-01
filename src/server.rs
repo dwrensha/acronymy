@@ -9,6 +9,7 @@ use capnp_rpc::capability::{LocalClient};
 
 use sqlite3;
 
+#[deriving(Copy)]
 pub struct UiViewImpl;
 
 impl powerbox_capability::Server for UiViewImpl {
@@ -46,6 +47,8 @@ pub struct WebSessionImpl {
     db : sqlite3::Database,
 }
 
+unsafe impl Send for WebSessionImpl {}
+
 impl WebSessionImpl {
     pub fn new() -> sqlite3::SqliteResult<WebSessionImpl> {
         let mut db = try!(sqlite3::open("/var/data.db"));
@@ -64,7 +67,7 @@ impl WebSessionImpl {
 
     fn is_word(&self, word : &str) -> sqlite3::SqliteResult<bool> {
 
-        if ! word.is_alphanumeric() { return Ok(false); }
+        if ! word.chars().all(|c| c.is_alphanumeric()) { return Ok(false); }
 
         let mut cursor = try!(self.db.prepare(
             format!("SELECT * FROM Words WHERE Word = \"{}\";", word).as_slice(),
@@ -142,7 +145,7 @@ impl WebSessionImpl {
                 result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer).as_slice());
             }
             result.push_str("</div>");
-            return Ok(result.into_string());
+            return Ok(result);
         }
     }
 
@@ -323,7 +326,7 @@ fn construct_html(page_data : PageData) -> String {
     }
 
     result.push_str("</body></html>");
-    result.into_string()
+    result
 }
 
 impl web_session::Server for WebSessionImpl {
@@ -401,7 +404,7 @@ pub fn keep_going(data: &[u8], f: |*const u8, uint| -> i64) -> i64 {
 }
 
 
-
+#[deriving(Copy)]
 pub struct FdStream {
     fd : ::libc::c_int,
 }
@@ -452,6 +455,7 @@ impl Writer for FdStream {
     }
 }
 
+#[deriving(Copy)]
 pub struct Restorer;
 
 impl SturdyRefRestorer for Restorer {

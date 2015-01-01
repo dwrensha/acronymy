@@ -15,7 +15,7 @@ mod init {
         for line in input.lock().lines() {
             let word = line.unwrap().clone();
             let trimmed = word.as_slice().trim();
-            assert!(trimmed.is_alphanumeric(), "not alphanumeric: {}", trimmed);
+            assert!(trimmed.chars().all(|c| c.is_alphanumeric()), "not alphanumeric: {}", trimmed);
             try!(db.exec(format!("INSERT INTO Words VALUES(\"{}\");", trimmed).as_slice()));
         }
         Ok(())
