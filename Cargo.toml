@@ -23,6 +23,6 @@ capnpc = "0.0.17"
 
 [dependencies]
 capnp = "0.0.16"
-capnp-rpc = "0.0.8"
+capnp-rpc = "0.0.9"
 url = "0.2.6"
 time = "0.1.3"
