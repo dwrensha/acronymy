@@ -9,7 +9,7 @@ use capnp_rpc::capability::{LocalClient};
 
 use sqlite3;
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct UiViewImpl;
 
 impl powerbox_capability::Server for UiViewImpl {
@@ -375,7 +375,10 @@ impl web_session::Server for WebSessionImpl {
 
 // copied from libstd/sys/unix/mod.rs
 #[inline]
-pub fn retry<T: ::std::num::SignedInt> (f: || -> T) -> T {
+pub fn retry<T, F> (mut f: F) -> T where
+    T: ::std::num::SignedInt,
+    F: FnMut() -> T,
+{
     let one: T = ::std::num::Int::one();
     loop {
         let n = f();
@@ -385,7 +388,9 @@ pub fn retry<T: ::std::num::SignedInt> (f: || -> T) -> T {
 }
 
 // copied from libstd/sys/common/mod.rs
-pub fn keep_going(data: &[u8], f: |*const u8, uint| -> i64) -> i64 {
+pub fn keep_going<F>(data: &[u8], mut f: F) -> i64 where
+    F: FnMut(*const u8, uint) -> i64,
+{
     let origamt = data.len();
     let mut data = data.as_ptr();
     let mut amt = origamt;
@@ -404,7 +409,7 @@ pub fn keep_going(data: &[u8], f: |*const u8, uint| -> i64) -> i64 {
 }
 
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct FdStream {
     fd : ::libc::c_int,
 }
@@ -455,7 +460,7 @@ impl Writer for FdStream {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct Restorer;
 
 impl SturdyRefRestorer for Restorer {

@@ -1,6 +1,8 @@
 #![crate_name="acronymy"]
 #![crate_type = "bin"]
 
+#![feature(old_orphan_check)]
+
 extern crate libc;
 extern crate time;
 extern crate url;
