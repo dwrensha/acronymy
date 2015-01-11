@@ -30,7 +30,7 @@ impl ui_view::Server for UiViewImpl {
 
         let client : web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
-                FromServer::new(None::<LocalClient>, box session)
+                web_session::ToClient(session).from_server(None::<LocalClient>)
             }
             Err(_e) => {
                 return context.fail();
@@ -96,7 +96,7 @@ impl WebSessionImpl {
         let mut query = String::new();
         query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word).as_slice());
         query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
-        let mut idx = 0u;
+        let mut idx = 0us;
         for &d in definition.iter() {
             if idx != 0 { query.push_str(","); }
             query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d).as_slice());
@@ -120,7 +120,7 @@ impl WebSessionImpl {
             format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word).as_slice(),
             &None));
 
-        let mut map = HashMap::<int, String>::new();
+        let mut map = HashMap::<isize, String>::new();
 
         loop {
             match try!(cursor.step_row()) {
@@ -140,7 +140,7 @@ impl WebSessionImpl {
 
             let mut result = String::new();
             result.push_str("<div>");
-            for idx in range::<int>(0, word.len() as int) {
+            for idx in range::<isize>(0, word.len() as isize) {
                 let definer : &str = map[idx].as_slice();
                 result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer).as_slice());
             }
@@ -149,7 +149,7 @@ impl WebSessionImpl {
         }
     }
 
-    fn count_defs(&self) -> sqlite3::SqliteResult<(int, int, Vec<String>)> {
+    fn count_defs(&self) -> sqlite3::SqliteResult<(isize, isize, Vec<String>)> {
         let mut cursor = try!(self.db.prepare("SELECT COUNT(*) FROM Words;", &None));
         assert!(cursor.step() == sqlite3::ResultCode::SQLITE_ROW);
         let num_words = cursor.get_int(0);
@@ -275,7 +275,7 @@ fn define_form(word :&str) -> String {
 enum PageData {
     Error(String),
     WordAndDef(String, String, Option<String>),
-    HomePage(int, int, Vec<String>),
+    HomePage(isize, isize, Vec<String>),
 }
 
 fn construct_html(page_data : PageData) -> String {
@@ -311,7 +311,7 @@ fn construct_html(page_data : PageData) -> String {
                                     num_defined, total).as_slice());
             if recent.len() > 0 {
                 result.push_str("<div>Recently modified words: ");
-                let mut idx = 0u;
+                let mut idx = 0us;
                 for w in recent.iter() {
                     if idx != 0 {
                         result.push_str(", ");
@@ -348,7 +348,7 @@ impl web_session::Server for WebSessionImpl {
             content.get_body().set_bytes(MAIN_CSS.as_bytes())
         } else {
             let page_data = match self.construct_page_data(path, query) {
-                Err(e) => { PageData::Error(format!("database error: {} ({})", e, self.db.get_errmsg())) }
+                Err(e) => { PageData::Error(format!("database error: {:?} ({})", e, self.db.get_errmsg())) }
                 Ok(page_data) => { page_data }
             };
             content.get_body().set_bytes(construct_html(page_data).as_bytes());
@@ -382,14 +382,14 @@ pub fn retry<T, F> (mut f: F) -> T where
     let one: T = ::std::num::Int::one();
     loop {
         let n = f();
-        if n == -one && ::std::os::errno() == ::libc::EINTR as uint { }
+        if n == -one && ::std::os::errno() == ::libc::EINTR as usize { }
         else { return n }
     }
 }
 
 // copied from libstd/sys/common/mod.rs
 pub fn keep_going<F>(data: &[u8], mut f: F) -> i64 where
-    F: FnMut(*const u8, uint) -> i64,
+    F: FnMut(*const u8, usize) -> i64,
 {
     let origamt = data.len();
     let mut data = data.as_ptr();
@@ -399,8 +399,8 @@ pub fn keep_going<F>(data: &[u8], mut f: F) -> i64 where
         if ret == 0 {
             break
         } else if ret != -1 {
-            amt -= ret as uint;
-            data = unsafe { data.offset(ret as int) };
+            amt -= ret as usize;
+            data = unsafe { data.offset(ret as isize) };
         } else {
             return ret;
         }
@@ -421,7 +421,7 @@ impl FdStream {
 }
 
 impl Reader for FdStream {
-    fn read(&mut self, buf : &mut [u8]) -> ::std::io::IoResult<uint> {
+    fn read(&mut self, buf : &mut [u8]) -> ::std::io::IoResult<usize> {
         let ret = retry(|| unsafe {
             ::libc::read(self.fd,
                        buf.as_mut_ptr() as *mut ::libc::c_void,
@@ -437,7 +437,7 @@ impl Reader for FdStream {
 //            Err(super::last_error())
             panic!()
         } else {
-            Ok(ret as uint)
+            Ok(ret as usize)
         }
     }
 }
@@ -466,7 +466,7 @@ pub struct Restorer;
 impl SturdyRefRestorer for Restorer {
     fn restore(&self, obj_id : any_pointer::Reader) -> Option<Box<ClientHook+Send>> {
         if obj_id.is_null() {
-            let client : ui_view::Client = FromServer::new(None::<LocalClient>, box UiViewImpl);
+            let client = ui_view::ToClient(UiViewImpl).from_server(None::<LocalClient>);
             Some(client.client.hook)
         } else {
             None

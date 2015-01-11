@@ -1,6 +1,8 @@
 #![crate_name="initdb"]
 #![crate_type = "bin"]
 
+#![allow(unstable)]
+
 extern crate sqlite3;
 
 mod init {
@@ -31,11 +33,11 @@ mod init {
             Ok(mut db) => {
                match write_db(&mut db) {
                    Ok(()) => {}
-                   Err(e) => { println!("error: {}, ({})", e, db.get_errmsg()) }
+                   Err(e) => { println!("error: {:?}, ({})", e, db.get_errmsg()) }
                }
             }
             Err(e) => {
-               println!("could not open database: {}", e);
+               println!("could not open database: {:?}", e);
             }
         }
     }
