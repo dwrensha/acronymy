@@ -421,15 +421,15 @@ impl FdStream {
 }
 
 impl Reader for FdStream {
-    fn read(&mut self, buf : &mut [u8]) -> ::std::io::IoResult<usize> {
+    fn read(&mut self, buf : &mut [u8]) -> ::std::old_io::IoResult<usize> {
         let ret = retry(|| unsafe {
             ::libc::read(self.fd,
                        buf.as_mut_ptr() as *mut ::libc::c_void,
                        buf.len() as ::libc::size_t)
         });
         if ret == 0 {
-            Err(::std::io::IoError {
-                kind: ::std::io::EndOfFile,
+            Err(::std::old_io::IoError {
+                kind: ::std::old_io::EndOfFile,
                 desc: "end of file",
                 detail: None,
             })
@@ -443,7 +443,7 @@ impl Reader for FdStream {
 }
 
 impl Writer for FdStream {
-    fn write(&mut self, buf : &[u8]) -> ::std::io::IoResult<()> {
+    fn write_all(&mut self, buf : &[u8]) -> ::std::old_io::IoResult<()> {
         let ret = keep_going(buf, |buf, len| {
             unsafe {
                 ::libc::write(self.fd, buf as *const ::libc::c_void,
@@ -474,7 +474,7 @@ impl SturdyRefRestorer for Restorer {
     }
 }
 
-pub fn main() -> ::std::io::IoResult<()> {
+pub fn main() -> ::std::old_io::IoResult<()> {
 
     let args = ::std::os::args();
 
@@ -483,7 +483,7 @@ pub fn main() -> ::std::io::IoResult<()> {
         let initdb_path = ::std::path::Path::new(args[2].as_slice());
         let proddb_path = ::std::path::Path::new(args[3].as_slice());
         println!("copying database from {} to {}", args[2], args[3]);
-        try!(::std::io::fs::copy(&initdb_path, &proddb_path));
+        try!(::std::old_io::fs::copy(&initdb_path, &proddb_path));
         println!("success!");
     }
 

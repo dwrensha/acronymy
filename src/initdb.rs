@@ -13,7 +13,7 @@ mod init {
         try!(db.exec("CREATE TABLE Definitions(Definee TEXT, Idx INTEGER, Definer TEXT);"));
         try!(db.exec("CREATE TABLE Log(Word TEXT, Timestamp INTEGER);"));
 
-        let mut input = ::std::io::stdin();
+        let mut input = ::std::old_io::stdin();
         for line in input.lock().lines() {
             let word = line.unwrap().clone();
             let trimmed = word.as_slice().trim();
