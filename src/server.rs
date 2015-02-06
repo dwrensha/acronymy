@@ -33,7 +33,7 @@ impl ui_view::Server for UiViewImpl {
                 web_session::ToClient(session).from_server(None::<LocalClient>)
             }
             Err(_e) => {
-                return context.fail();
+                return context.fail("".to_string());
             }
         };
         // we need to do this dance to upcast.
@@ -476,12 +476,12 @@ impl SturdyRefRestorer for Restorer {
 
 pub fn main() -> ::std::old_io::IoResult<()> {
 
-    let args = ::std::os::args();
+    let args : Vec<String> = ::std::env::args().map(|x| {x.into_string().unwrap()}).collect();
 
     if args.len() == 4 && args[1].as_slice() == "--init" {
         println!("initializing...");
-        let initdb_path = ::std::path::Path::new(args[2].as_slice());
-        let proddb_path = ::std::path::Path::new(args[3].as_slice());
+        let initdb_path = ::std::old_path::Path::new(args[2].as_slice());
+        let proddb_path = ::std::old_path::Path::new(args[3].as_slice());
         println!("copying database from {} to {}", args[2], args[3]);
         try!(::std::old_io::fs::copy(&initdb_path, &proddb_path));
         println!("success!");
@@ -492,7 +492,7 @@ pub fn main() -> ::std::old_io::IoResult<()> {
     let ofs = FdStream::new(3);
 
     let connection_state = RpcConnectionState::new();
-    connection_state.run(ifs, ofs, Restorer);
+    connection_state.run(ifs, ofs, Restorer, *::capnp::ReaderOptions::new().fail_fast(false));
 
     Ok(())
 }

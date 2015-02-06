@@ -1,8 +1,7 @@
 #![crate_name="acronymy"]
 #![crate_type = "bin"]
 
-#![feature(box_syntax)]
-#![allow(unstable)]
+#![feature(box_syntax, collections, core, env, io, libc, os, path)]
 
 extern crate libc;
 extern crate time;

@@ -1,7 +1,7 @@
 #![crate_name="initdb"]
 #![crate_type = "bin"]
 
-#![allow(unstable)]
+#![feature(core, env, io, os)]
 
 extern crate sqlite3;
 
@@ -24,7 +24,7 @@ mod init {
     }
 
     pub fn open_db() -> SqliteResult<Database> {
-        let args = ::std::os::args();
+        let args : Vec<String> = ::std::env::args().map(|x| {x.into_string().unwrap()}).collect();
         return open(args[1].as_slice());
     }
 
