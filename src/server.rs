@@ -2,7 +2,8 @@ use grain_capnp::{powerbox_capability, ui_view, ui_session};
 use web_session_capnp::{web_session};
 
 use std::collections::hash_map::HashMap;
-use capnp::capability::{ClientHook, FromServer};
+use capnp::capability::{FromServer};
+use capnp::private::capability::{ClientHook};
 use capnp::any_pointer;
 use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
 use capnp_rpc::capability::{LocalClient};
@@ -96,7 +97,7 @@ impl WebSessionImpl {
         let mut query = String::new();
         query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word).as_slice());
         query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
-        let mut idx = 0us;
+        let mut idx = 0usize;
         for &d in definition.iter() {
             if idx != 0 { query.push_str(","); }
             query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d).as_slice());
@@ -311,7 +312,7 @@ fn construct_html(page_data : PageData) -> String {
                                     num_defined, total).as_slice());
             if recent.len() > 0 {
                 result.push_str("<div>Recently modified words: ");
-                let mut idx = 0us;
+                let mut idx = 0usize;
                 for w in recent.iter() {
                     if idx != 0 {
                         result.push_str(", ");
@@ -382,7 +383,7 @@ pub fn retry<T, F> (mut f: F) -> T where
     let one: T = ::std::num::Int::one();
     loop {
         let n = f();
-        if n == -one && ::std::os::errno() == ::libc::EINTR as usize { }
+        if n == -one && ::std::os::errno() == ::libc::EINTR { }
         else { return n }
     }
 }
@@ -476,7 +477,7 @@ impl SturdyRefRestorer for Restorer {
 
 pub fn main() -> ::std::old_io::IoResult<()> {
 
-    let args : Vec<String> = ::std::env::args().map(|x| {x.into_string().unwrap()}).collect();
+    let args : Vec<String> = ::std::env::args().collect();
 
     if args.len() == 4 && args[1].as_slice() == "--init" {
         println!("initializing...");
