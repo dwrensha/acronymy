@@ -478,7 +478,6 @@ impl SturdyRefRestorer for Restorer {
 pub fn main() -> ::std::old_io::IoResult<()> {
 
     let args : Vec<String> = ::std::env::args().collect();
-
     if args.len() == 4 && args[1].as_slice() == "--init" {
         println!("initializing...");
         let initdb_path = ::std::old_path::Path::new(args[2].as_slice());
@@ -492,9 +491,11 @@ pub fn main() -> ::std::old_io::IoResult<()> {
     let ifs = FdStream::new(3);
     let ofs = FdStream::new(3);
 
+
     let connection_state = RpcConnectionState::new();
     connection_state.run(ifs, ofs, Restorer, *::capnp::ReaderOptions::new().fail_fast(false));
 
+    ::std::old_io::timer::sleep(::std::time::duration::Duration::max_value());
     Ok(())
 }
 
