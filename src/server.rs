@@ -235,7 +235,6 @@ const MAIN_CSS : &'static str =
             font-size: medium;
              margin-left: auto;
              margin-right: auto;
-             width: 600px;
              text-align: center;
      }
      div {
