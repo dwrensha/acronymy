@@ -495,7 +495,7 @@ pub fn main() -> ::std::old_io::IoResult<()> {
     let connection_state = RpcConnectionState::new();
     connection_state.run(ifs, ofs, Restorer, *::capnp::ReaderOptions::new().fail_fast(false));
 
-    ::std::old_io::timer::sleep(::std::time::duration::Duration::max_value());
+    unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
     Ok(())
 }
 
