@@ -1,7 +1,7 @@
 #![crate_name="initdb"]
 #![crate_type = "bin"]
 
-#![feature(core, env, old_io)]
+#![feature(core, old_io)]
 
 extern crate sqlite3;
 
