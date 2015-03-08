@@ -1,12 +1,12 @@
-#![feature(old_path)]
+#![feature(path)]
 
 extern crate capnpc;
 
 fn main() {
-    let prefix = Path::new("schema");
+    let prefix = ::std::path::Path::new("schema");
 
-    ::capnpc::compile(prefix.clone(),
-                      &[Path::new("schema/grain.capnp"),
-                        Path::new("schema/util.capnp"),
-                        Path::new("schema/web-session.capnp")]).unwrap();
+    ::capnpc::compile(prefix,
+                      &[::std::path::Path::new("schema/grain.capnp"),
+                        ::std::path::Path::new("schema/util.capnp"),
+                        ::std::path::Path::new("schema/web-session.capnp")]).unwrap();
 }

@@ -373,41 +373,15 @@ impl web_session::Server for WebSessionImpl {
     }
 }
 
-// copied from libstd/sys/unix/mod.rs
-#[inline]
-pub fn retry<T, F> (mut f: F) -> T where
-    T: ::std::num::SignedInt,
-    F: FnMut() -> T,
-{
+// copied from libstd/sys/unix/mod.rs and libstd/sys/unix/fd.rs
+pub fn cvt<T: ::std::num::SignedInt>(t: T) -> ::std::io::Result<T> {
     let one: T = ::std::num::Int::one();
-    loop {
-        let n = f();
-        if n == -one && ::std::os::errno() == ::libc::EINTR { }
-        else { return n }
+    if t == -one {
+        Err(::std::io::Error::last_os_error())
+    } else {
+        Ok(t)
     }
 }
-
-// copied from libstd/sys/common/mod.rs
-pub fn keep_going<F>(data: &[u8], mut f: F) -> i64 where
-    F: FnMut(*const u8, usize) -> i64,
-{
-    let origamt = data.len();
-    let mut data = data.as_ptr();
-    let mut amt = origamt;
-    while amt > 0 {
-        let ret = retry(|| f(data, amt));
-        if ret == 0 {
-            break
-        } else if ret != -1 {
-            amt -= ret as usize;
-            data = unsafe { data.offset(ret as isize) };
-        } else {
-            return ret;
-        }
-    }
-    return (origamt - amt) as i64;
-}
-
 
 #[derive(Copy)]
 pub struct FdStream {
@@ -420,44 +394,27 @@ impl FdStream {
     }
 }
 
-impl Reader for FdStream {
-    fn read(&mut self, buf : &mut [u8]) -> ::std::old_io::IoResult<usize> {
-        let ret = retry(|| unsafe {
+impl ::std::io::Read for FdStream {
+    fn read(&mut self, buf : &mut [u8]) -> ::std::io::Result<usize> {
+        let ret = try!(cvt(unsafe {
             ::libc::read(self.fd,
-                       buf.as_mut_ptr() as *mut ::libc::c_void,
-                       buf.len() as ::libc::size_t)
-        });
-        if ret == 0 {
-            Err(::std::old_io::IoError {
-                kind: ::std::old_io::EndOfFile,
-                desc: "end of file",
-                detail: None,
-            })
-        } else if ret < 0 {
-//            Err(super::last_error())
-            panic!()
-        } else {
-            Ok(ret as usize)
-        }
+                         buf.as_mut_ptr() as *mut ::libc::c_void,
+                         buf.len() as ::libc::size_t)
+        }));
+        Ok(ret as usize)
     }
 }
 
-impl Writer for FdStream {
-    fn write_all(&mut self, buf : &[u8]) -> ::std::old_io::IoResult<()> {
-        let ret = keep_going(buf, |buf, len| {
-            unsafe {
-                ::libc::write(self.fd, buf as *const ::libc::c_void,
-                              len as ::libc::size_t) as i64
-            }
-        });
-        if ret < 0 {
-            panic!()
-            //Err(super::last_error())
-        } else {
-            Ok(())
-        }
-
+impl ::std::io::Write for FdStream {
+    fn write(&mut self, buf : &[u8]) -> ::std::io::Result<usize> {
+        let ret = try!(cvt(unsafe {
+            ::libc::write(self.fd,
+                          buf.as_ptr() as *const ::libc::c_void,
+                          buf.len() as ::libc::size_t)
+        }));
+        Ok(ret as usize)
     }
+    fn flush(&mut self) -> ::std::io::Result<()> { Ok(()) }
 }
 
 #[derive(Copy)]
@@ -474,15 +431,15 @@ impl SturdyRefRestorer for Restorer {
     }
 }
 
-pub fn main() -> ::std::old_io::IoResult<()> {
+pub fn main() -> ::std::io::Result<()> {
 
     let args : Vec<String> = ::std::env::args().collect();
     if args.len() == 4 && args[1].as_slice() == "--init" {
         println!("initializing...");
-        let initdb_path = ::std::old_path::Path::new(args[2].as_slice());
-        let proddb_path = ::std::old_path::Path::new(args[3].as_slice());
+        let initdb_path = ::std::path::Path::new(args[2].as_slice());
+        let proddb_path = ::std::path::Path::new(args[3].as_slice());
         println!("copying database from {} to {}", args[2], args[3]);
-        try!(::std::old_io::fs::copy(&initdb_path, &proddb_path));
+        try!(::std::fs::copy(initdb_path, proddb_path));
         println!("success!");
     }
 
@@ -492,7 +449,9 @@ pub fn main() -> ::std::old_io::IoResult<()> {
 
 
     let connection_state = RpcConnectionState::new();
-    connection_state.run(ifs, ofs, Restorer, *::capnp::ReaderOptions::new().fail_fast(false));
+    connection_state.run(::capnp::io::ReadInputStream::new(ifs),
+                         ::capnp::io::WriteOutputStream::new(ofs),
+                         Restorer, *::capnp::ReaderOptions::new().fail_fast(false));
 
     unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
     Ok(())
