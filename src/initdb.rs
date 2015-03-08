@@ -1,19 +1,20 @@
 #![crate_name="initdb"]
 #![crate_type = "bin"]
 
-#![feature(core, old_io)]
+#![feature(core, io)]
 
 extern crate sqlite3;
 
 mod init {
     use sqlite3::{open, Database, SqliteResult};
+    use std::io::BufReadExt;
 
     pub fn write_db(db : &mut Database) -> SqliteResult<()> {
         try!(db.exec("CREATE TABLE Words(Word TEXT);"));
         try!(db.exec("CREATE TABLE Definitions(Definee TEXT, Idx INTEGER, Definer TEXT);"));
         try!(db.exec("CREATE TABLE Log(Word TEXT, Timestamp INTEGER);"));
 
-        let mut input = ::std::old_io::stdin();
+        let input = ::std::io::stdin();
         for line in input.lock().lines() {
             let word = line.unwrap().clone();
             let trimmed = word.as_slice().trim();
