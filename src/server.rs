@@ -25,9 +25,7 @@ impl ui_view::Server for UiViewImpl {
     }
 
     fn new_session(&mut self, mut context : ui_view::NewSessionContext) {
-        println!("asked for a new session!");
         let (_, mut results) = context.get();
-
 
         let client : web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
