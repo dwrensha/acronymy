@@ -3,9 +3,7 @@ use web_session_capnp::{web_session};
 
 use std::collections::hash_map::HashMap;
 use capnp::capability::{FromServer};
-use capnp::private::capability::{ClientHook};
-use capnp::any_pointer;
-use capnp_rpc::rpc::{RpcConnectionState, SturdyRefRestorer};
+use capnp_rpc::rpc::{RpcConnectionState};
 use capnp_rpc::capability::{LocalClient};
 
 use sqlite3;
@@ -415,20 +413,6 @@ impl ::std::io::Write for FdStream {
     fn flush(&mut self) -> ::std::io::Result<()> { Ok(()) }
 }
 
-#[derive(Copy)]
-pub struct Restorer;
-
-impl SturdyRefRestorer for Restorer {
-    fn restore(&self, obj_id : any_pointer::Reader) -> Option<Box<ClientHook+Send>> {
-        if obj_id.is_null() {
-            let client = ui_view::ToClient(UiViewImpl).from_server(None::<LocalClient>);
-            Some(client.client.hook)
-        } else {
-            None
-        }
-    }
-}
-
 pub fn main() -> ::std::io::Result<()> {
 
     let args : Vec<String> = ::std::env::args().collect();
@@ -445,11 +429,13 @@ pub fn main() -> ::std::io::Result<()> {
     let ifs = FdStream::new(3);
     let ofs = FdStream::new(3);
 
+    let client = ui_view::ToClient(UiViewImpl).from_server(None::<LocalClient>);
 
     let connection_state = RpcConnectionState::new();
     connection_state.run(::capnp::io::ReadInputStream::new(ifs),
                          ::capnp::io::WriteOutputStream::new(ofs),
-                         Restorer, *::capnp::ReaderOptions::new().fail_fast(false));
+                         client.client.hook,
+                         *::capnp::ReaderOptions::new().fail_fast(false));
 
     unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
     Ok(())
