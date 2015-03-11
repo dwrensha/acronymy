@@ -18,7 +18,7 @@ Make sure that you have [Cap'n Proto](https://github.com/kentonv/capnproto) inst
 You must supply your own word list.
 
 ```
-$ cargo build
-$ ./target/initdb data.db < words.txt
+$ cargo build --release
+$ ./target/release/initdb data.db < words.txt
 $ spk dev
 ```
