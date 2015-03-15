@@ -9,16 +9,13 @@ const pkgdef :Spk.PackageDefinition = (
   # The package definition. Note that the spk tool looks specifically for the
   # "pkgdef" constant.
 
-
-
   id = "7m2fcfn7qdyexs3jmn6vrdngcryeuc8y4fa6jpyj4fgwh5tq27ph",
-
 
   manifest = (
     # This manifest is included in your app package to tell Sandstorm
     # about your app.
 
-    appVersion = 3,  # Increment this for every release.
+    appVersion = 4,  # Increment this for every release.
 
     actions = [
       # Define your "new document" handlers here.
