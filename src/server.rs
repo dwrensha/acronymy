@@ -329,7 +329,7 @@ impl web_session::Server for WebSessionImpl {
     fn get(&mut self, mut context : web_session::GetContext) {
         println!("GET");
         let (params, results) = context.get();
-        let raw_path = format!("/{}", params.get_path());
+        let raw_path = format!("/{}", params.get_path().unwrap());
         let mut content = results.init_content();
         content.set_mime_type("text/html");
 
@@ -435,7 +435,7 @@ pub fn main() -> ::std::io::Result<()> {
     connection_state.run(::capnp::io::ReadInputStream::new(ifs),
                          ::capnp::io::WriteOutputStream::new(ofs),
                          client.client.hook,
-                         *::capnp::ReaderOptions::new().fail_fast(false));
+                         ::capnp::ReaderOptions::new());
 
     unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
     Ok(())

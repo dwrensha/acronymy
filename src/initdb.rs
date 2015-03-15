@@ -1,13 +1,13 @@
 #![crate_name="initdb"]
 #![crate_type = "bin"]
 
-#![feature(core, io)]
+#![feature(core)]
 
 extern crate sqlite3;
 
 mod init {
     use sqlite3::{open, Database, SqliteResult};
-    use std::io::BufReadExt;
+    use std::io::BufRead;
 
     pub fn write_db(db : &mut Database) -> SqliteResult<()> {
         try!(db.exec("CREATE TABLE Words(Word TEXT);"));
