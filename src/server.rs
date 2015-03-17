@@ -67,7 +67,7 @@ impl WebSessionImpl {
         if ! word.chars().all(|c| c.is_alphanumeric()) { return Ok(false); }
 
         let mut cursor = try!(self.db.prepare(
-            format!("SELECT * FROM Words WHERE Word = \"{}\";", word).as_slice(),
+            &format!("SELECT * FROM Words WHERE Word = \"{}\";", word),
             &None));
 
         return Ok(try!(cursor.step_row()).is_some());
@@ -91,22 +91,22 @@ impl WebSessionImpl {
 
         let time : i64 = ::time::get_time().sec;
         let mut query = String::new();
-        query.push_str(format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word).as_slice());
+        query.push_str(&format!("BEGIN; DELETE FROM Definitions WHERE Definee =\"{}\"; ", word));
         query.push_str("INSERT INTO Definitions(Definee, Idx, Definer) VALUES");
         let mut idx = 0usize;
         for &d in definition.iter() {
             if idx != 0 { query.push_str(","); }
-            query.push_str(format!("(\"{}\", {}, \"{}\")", word, idx, d).as_slice());
+            query.push_str(&format!("(\"{}\", {}, \"{}\")", word, idx, d));
             idx += 1;
         }
         query.push_str(";");
-        query.push_str(format!("DELETE FROM Log WHERE Word=\"{}\";", word).as_slice());
-        query.push_str(format!("INSERT INTO Log(Word, Timestamp) VALUES(\"{}\",{});", word, time).as_slice());
+        query.push_str(&format!("DELETE FROM Log WHERE Word=\"{}\";", word));
+        query.push_str(&format!("INSERT INTO Log(Word, Timestamp) VALUES(\"{}\",{});", word, time));
         query.push_str("COMMIT;");
 
         println!("query: {}", query);
 
-        try!(self.db.exec(query.as_slice()));
+        try!(self.db.exec(&query));
 
         return Ok(());
     }
@@ -114,7 +114,7 @@ impl WebSessionImpl {
     fn get_def(&self, word : &str) -> sqlite3::SqliteResult<String> {
 
         let mut cursor = try!(self.db.prepare(
-            format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word).as_slice(),
+            &format!("SELECT * FROM Definitions WHERE Definee = \"{}\";", word),
             &None));
 
         let mut map = HashMap::<isize, String>::new();
@@ -137,9 +137,9 @@ impl WebSessionImpl {
 
             let mut result = String::new();
             result.push_str("<div>");
-            for idx in range::<isize>(0, word.len() as isize) {
-                let definer : &str = map[idx].as_slice();
-                result.push_str(format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer).as_slice());
+            for idx in 0..(word.len() as isize) {
+                let definer : &str = &map[idx];
+                result.push_str(&format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer));
             }
             result.push_str("</div>");
             return Ok(result);
@@ -173,8 +173,7 @@ impl WebSessionImpl {
 
 
     fn construct_page_data(&mut self, path : Vec<String>, query: Option<String>) -> sqlite3::SqliteResult<PageData> {
-        if path.len() == 1 && path[0].as_slice() == "define" {
-
+        if path.len() == 1 && path[0] == "define" {
 
             let mut query_map = HashMap::<String, String>::new();
             match query {
@@ -187,7 +186,7 @@ impl WebSessionImpl {
             }
 
             let word : String = match query_map.get(&"word".to_string()) {
-                Some(w) if try!(self.is_word(w.as_slice())) => {
+                Some(w) if try!(self.is_word(&w)) => {
                     w.clone()
                 }
                 _ => {
@@ -196,23 +195,23 @@ impl WebSessionImpl {
             };
             match query_map.get(&"definition".to_string()) {
                 None => {
-                    let def_div = try!(self.get_def(word.as_slice()));
+                    let def_div = try!(self.get_def(&word));
 
                     return Ok(PageData::WordAndDef(word, def_div, None));
                 }
                 Some(def_query) => {
 
-                    let definition : Vec<&str> = def_query.as_slice().split(' ').collect();
+                    let definition : Vec<&str> = def_query.split(' ').collect();
 
-                    if try!(self.validate_def(word.as_slice(), definition.as_slice())) {
+                    if try!(self.validate_def(&word, &definition)) {
 
-                        try!(self.write_def(word.as_slice(), definition.as_slice()));
-                        let def_div = try!(self.get_def(word.as_slice()));
+                        try!(self.write_def(&word, &definition));
+                        let def_div = try!(self.get_def(&word));
                         return Ok(PageData::WordAndDef(word,
                                                        def_div,
                                                        None));
                     } else {
-                        let def_div = try!(self.get_def(word.as_slice()));
+                        let def_div = try!(self.get_def(&word));
                         return Ok(PageData::WordAndDef(word, def_div, Some("invalid definition".to_string())))
                     }
                 }
@@ -276,35 +275,34 @@ enum PageData {
 
 fn construct_html(page_data : PageData) -> String {
     let mut result = String::new();
-    result.push_str(format!("<html>{}<body>", HEADER).as_slice());
+    result.push_str(&format!("<html>{}<body>", HEADER));
 
     const HOME_LINK : &'static str = "<a href=\"/\">home</a>";
     match page_data {
         PageData::Error(e) => {
-            result.push_str(format!("<div class=\"err\"> {} </div>", e).as_slice());
+            result.push_str(&format!("<div class=\"err\"> {} </div>", e));
             result.push_str(LOOKUP_FORM);
             result.push_str(HOME_LINK);
         }
         PageData::WordAndDef(word, def_div, err) => {
-            result.push_str(format!("<div class=\"word\">{}</div>", word).as_slice());
-
-            result.push_str(def_div.as_slice());
+            result.push_str(&format!("<div class=\"word\">{}</div>", word));
+            result.push_str(&def_div);
 
             match err {
                 None => {}
                 Some(e) => {
-                    result.push_str(format!("<div class=\"err\">{}</div>", e).as_slice());
+                    result.push_str(&format!("<div class=\"err\">{}</div>", e));
                 }
             }
 
-            result.push_str(define_form(word.as_slice()).as_slice());
+            result.push_str(&define_form(&word));
             result.push_str(HOME_LINK);
         }
         PageData::HomePage(num_defined, total, recent) => {
             result.push_str("<div class=\"title\">Acronymy</div>");
             result.push_str("<div>A user-editable, acronym-only dictionary.</div>");
-            result.push_str(format!("<div>So far, we have defined {} out of {} words.</div>",
-                                    num_defined, total).as_slice());
+            result.push_str(&format!("<div>So far, we have defined {} out of {} words.</div>",
+                                     num_defined, total));
             if recent.len() > 0 {
                 result.push_str("<div>Recently modified words: ");
                 let mut idx = 0usize;
@@ -312,7 +310,7 @@ fn construct_html(page_data : PageData) -> String {
                     if idx != 0 {
                         result.push_str(", ");
                     }
-                    result.push_str(format!("<a href=\"/define?word={word}\">{word}</a>", word=*w).as_slice());
+                    result.push_str(&format!("<a href=\"/define?word={word}\">{word}</a>", word=*w));
                     idx += 1;
                 }
                 result.push_str(".</div>");
@@ -333,14 +331,14 @@ impl web_session::Server for WebSessionImpl {
         let mut content = results.init_content();
         content.set_mime_type("text/html");
 
-        let (path, query) = match ::url::parse_path(raw_path.as_slice()) {
+        let (path, query) = match ::url::parse_path(&raw_path) {
             Err(_e) => (Vec::new(), None),
             Ok((p, q, _f)) => (p, q),
         };
 
         println!("path = {}", raw_path);
 
-        if raw_path.as_slice() == "/main.css" {
+        if raw_path == "/main.css" {
             content.get_body().set_bytes(MAIN_CSS.as_bytes())
         } else {
             let page_data = match self.construct_page_data(path, query) {
@@ -416,10 +414,10 @@ impl ::std::io::Write for FdStream {
 pub fn main() -> ::std::io::Result<()> {
 
     let args : Vec<String> = ::std::env::args().collect();
-    if args.len() == 4 && args[1].as_slice() == "--init" {
+    if args.len() == 4 && args[1] == "--init" {
         println!("initializing...");
-        let initdb_path = ::std::path::Path::new(args[2].as_slice());
-        let proddb_path = ::std::path::Path::new(args[3].as_slice());
+        let initdb_path = ::std::path::Path::new(&args[2]);
+        let proddb_path = ::std::path::Path::new(&args[3]);
         println!("copying database from {} to {}", args[2], args[3]);
         try!(::std::fs::copy(initdb_path, proddb_path));
         println!("success!");

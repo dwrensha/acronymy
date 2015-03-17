@@ -1,8 +1,6 @@
 #![crate_name="initdb"]
 #![crate_type = "bin"]
 
-#![feature(core)]
-
 extern crate sqlite3;
 
 mod init {
@@ -17,16 +15,16 @@ mod init {
         let input = ::std::io::stdin();
         for line in input.lock().lines() {
             let word = line.unwrap().clone();
-            let trimmed = word.as_slice().trim();
+            let trimmed = word.trim();
             assert!(trimmed.chars().all(|c| c.is_alphanumeric()), "not alphanumeric: {}", trimmed);
-            try!(db.exec(format!("INSERT INTO Words VALUES(\"{}\");", trimmed).as_slice()));
+            try!(db.exec(&format!("INSERT INTO Words VALUES(\"{}\");", trimmed)));
         }
         Ok(())
     }
 
     pub fn open_db() -> SqliteResult<Database> {
         let args : Vec<String> = ::std::env::args().collect();
-        return open(args[1].as_slice());
+        return open(&args[1]);
     }
 
     pub fn main() {
