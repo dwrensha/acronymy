@@ -430,9 +430,7 @@ pub fn main() -> ::std::io::Result<()> {
     let client = ui_view::ToClient(UiViewImpl).from_server(None::<LocalClient>);
 
     let connection_state = RpcConnectionState::new();
-    connection_state.run(::capnp::io::ReadInputStream::new(ifs),
-                         ::capnp::io::WriteOutputStream::new(ofs),
-                         client.client.hook,
+    connection_state.run(ifs, ofs, client.client.hook,
                          ::capnp::ReaderOptions::new());
 
     unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
