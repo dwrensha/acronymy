@@ -7,7 +7,7 @@ extern crate libc;
 extern crate time;
 extern crate url;
 extern crate capnp;
-extern crate "capnp-rpc" as capnp_rpc;
+extern crate capnp_rpc;
 extern crate sqlite3;
 
 pub mod grain_capnp {

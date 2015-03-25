@@ -123,8 +123,8 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let definer = match row["Definer".to_string()] { sqlite3::BindArg::Text(ref t) => t.clone(), _ => panic!(), };
-                    let idx = match row["Idx".to_string()] { sqlite3::BindArg::Integer(ref i) => i.clone(), _ => panic!(), };
+                    let definer = match row[&"Definer".to_string()] { sqlite3::BindArg::Text(ref t) => t.clone(), _ => panic!(), };
+                    let idx = match row[&"Idx".to_string()] { sqlite3::BindArg::Integer(ref i) => i.clone(), _ => panic!(), };
 
                     map.insert(idx, definer);
                 }
@@ -138,7 +138,7 @@ impl WebSessionImpl {
             let mut result = String::new();
             result.push_str("<div>");
             for idx in 0..(word.len() as isize) {
-                let definer : &str = &map[idx];
+                let definer : &str = &map[&idx];
                 result.push_str(&format!(" <a href=\"define?word={word}\">{word}</a> ", word=definer));
             }
             result.push_str("</div>");
@@ -162,7 +162,7 @@ impl WebSessionImpl {
             match try!(cursor.step_row()) {
                 None => break,
                 Some(row) => {
-                    let word : String = match row["Word".to_string()] {sqlite3::BindArg::Text(ref t) => t.clone(), _ => panic!(),};
+                    let word : String = match row[&"Word".to_string()] {sqlite3::BindArg::Text(ref t) => t.clone(), _ => panic!(),};
                     recent_words.push(word);
                 }
             }
