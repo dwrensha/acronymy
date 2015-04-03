@@ -8,7 +8,7 @@ use capnp_rpc::capability::{LocalClient};
 
 use sqlite3;
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct UiViewImpl;
 
 impl powerbox_capability::Server for UiViewImpl {
