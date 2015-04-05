@@ -19,11 +19,11 @@ path = "src/initdb.rs"
 git = "https://github.com/linuxfood/rustsqlite.git"
 
 [build-dependencies]
-capnpc = "0.1.0"
+capnpc = "*"
 
 [dependencies]
-capnp = "0.1.0"
-capnp-rpc = "0.1.0"
+capnp = "*"
+capnp-rpc = "*"
 libc = "0.1.1"
 url = "0.2.6"
 time = "0.1.3"
