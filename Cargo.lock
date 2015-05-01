@@ -2,36 +2,36 @@
 name = "acronymy"
 version = "0.0.1"
 dependencies = [
- "capnp 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "capnp-rpc 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "capnpc 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp-rpc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnpc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "fdstream 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "sqlite3 0.1.0 (git+https://github.com/linuxfood/rustsqlite.git)",
- "time 0.1.24 (registry+https://github.com/rust-lang/crates.io-index)",
- "url 0.2.29 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.31 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "capnp"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "capnp-rpc"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "capnp 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "capnpc 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnpc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "capnpc"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "capnp 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -39,17 +39,17 @@ name = "fdstream"
 version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "gcc"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libc"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -57,7 +57,7 @@ name = "log"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -67,32 +67,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.3.12"
+version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sqlite3"
 version = "0.1.0"
-source = "git+https://github.com/linuxfood/rustsqlite.git#01405005cc283cede792472442db1f5601146f06"
+source = "git+https://github.com/linuxfood/rustsqlite.git#d586703eeb4767108d34df5b3dd18eaee3b3f352"
 dependencies = [
+ "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "time"
-version = "0.1.24"
+version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "gcc 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "url"
-version = "0.2.29"
+version = "0.2.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
