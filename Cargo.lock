@@ -2,27 +2,27 @@
 name = "acronymy"
 version = "0.0.1"
 dependencies = [
- "capnp 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "capnp-rpc 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "capnpc 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fdstream 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "sqlite3 0.1.0 (git+https://github.com/linuxfood/rustsqlite.git)",
  "time 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
- "url 0.2.31 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.34 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "byteorder"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "capnp"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "byteorder 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -30,7 +30,7 @@ name = "capnp-rpc"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "capnp 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "capnpc 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -39,7 +39,7 @@ name = "capnpc"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "capnp 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -47,7 +47,7 @@ name = "fdstream"
 version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -57,7 +57,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libc"
-version = "0.1.6"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -65,7 +65,7 @@ name = "log"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -83,7 +83,7 @@ name = "sqlite3"
 version = "0.1.0"
 source = "git+https://github.com/linuxfood/rustsqlite.git#d586703eeb4767108d34df5b3dd18eaee3b3f352"
 dependencies = [
- "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -93,12 +93,12 @@ version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gcc 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "url"
-version = "0.2.31"
+version = "0.2.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
