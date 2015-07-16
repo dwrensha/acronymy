@@ -387,7 +387,7 @@ pub fn main() -> ::std::io::Result<()> {
 
     let connection_state = RpcConnectionState::new();
     connection_state.run(ifs, ofs, client.client.hook,
-                         ::capnp::ReaderOptions::new());
+                         ::capnp::message::ReaderOptions::new());
 
     unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
     Ok(())
