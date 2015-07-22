@@ -1,7 +1,7 @@
 #![crate_name="acronymy"]
 #![crate_type = "bin"]
 
-#![feature(rt, start, str_char)]
+#![feature(str_char)]
 
 extern crate libc;
 extern crate time;
@@ -25,19 +25,11 @@ pub mod web_session_capnp {
 
 pub mod server;
 
-/// We write our own entry point because Rust's default lang_start() does some
-/// fancy memory protection that fails if procfs is not mounted.
-#[start]
-fn start(argc: isize, argv: *const *const u8) -> isize {
-
-    // We need to do this to get ::std::env:args() to work.
-    unsafe { ::std::rt::args::init(argc, argv); }
-
+fn main() {
     match server::main() {
-        Ok(()) => {return 0;}
+        Ok(()) => {return;}
         Err(e) => {
-            println!("error: {}", e);
-            return 1;
+            panic!("error: {}", e);
         }
     }
 }
