@@ -77,7 +77,7 @@ impl WebSessionImpl {
         if definition.len() != word.len() { return Ok(false); }
         let mut idx = 0;
         for &d in definition.iter() {
-            if !(try!(self.is_word(d)) && d.len() > 0 && d.char_at(0) == word.char_at(idx)) {
+            if !(try!(self.is_word(d)) && d.len() > 0 && d.as_bytes()[0] == word.as_bytes()[idx]) {
                 return Ok(false);
             }
 

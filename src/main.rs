@@ -1,8 +1,6 @@
 #![crate_name="acronymy"]
 #![crate_type = "bin"]
 
-#![feature(str_char)]
-
 extern crate libc;
 extern crate time;
 extern crate url;
