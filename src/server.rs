@@ -2,7 +2,6 @@ use grain_capnp::{powerbox_capability, ui_view, ui_session};
 use web_session_capnp::{web_session};
 
 use std::collections::hash_map::HashMap;
-use capnp::capability::{FromServer};
 use capnp_rpc::rpc::{RpcConnectionState};
 use capnp_rpc::capability::{LocalClient};
 
@@ -27,7 +26,7 @@ impl ui_view::Server for UiViewImpl {
 
         let client : web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
-                web_session::ToClient(session).from_server(None::<LocalClient>)
+                web_session::ToClient(session).from_server::<LocalClient>()
             }
             Err(_e) => {
                 return context.fail("".to_string());
@@ -383,7 +382,7 @@ pub fn main() -> ::std::io::Result<()> {
     let ifs = ::fdstream::FdStream::new(3);
     let ofs = ::fdstream::FdStream::new(3);
 
-    let client = ui_view::ToClient(UiViewImpl).from_server(None::<LocalClient>);
+    let client = ui_view::ToClient(UiViewImpl).from_server::<LocalClient>();
 
     let connection_state = RpcConnectionState::new();
     connection_state.run(ifs, ofs, client.client.hook,
