@@ -22,8 +22,6 @@ impl ui_view::Server for UiViewImpl {
     }
 
     fn new_session(&mut self, mut context : ui_view::NewSessionContext) {
-        let (_, mut results) = context.get();
-
         let client : web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
                 web_session::ToClient(session).from_server::<LocalClient>()
@@ -33,7 +31,7 @@ impl ui_view::Server for UiViewImpl {
             }
         };
         // we need to do this dance to upcast.
-        results.set_session(ui_session::Client { client : client.client});
+        context.get().1.set_session(ui_session::Client { client : client.client});
 
         context.done()
     }
@@ -325,26 +323,28 @@ fn construct_html(page_data : PageData) -> String {
 impl web_session::Server for WebSessionImpl {
     fn get(&mut self, mut context : web_session::GetContext) {
         println!("GET");
-        let (params, results) = context.get();
-        let raw_path = format!("/{}", params.get_path().unwrap());
-        let mut content = results.init_content();
-        content.set_mime_type("text/html");
+        {
+            let (params, results) = context.get();
+            let raw_path = format!("/{}", params.get_path().unwrap());
+            let mut content = results.init_content();
+            content.set_mime_type("text/html");
 
-        let (path, query) = match ::url::parse_path(&raw_path) {
-            Err(_e) => (Vec::new(), None),
-            Ok((p, q, _f)) => (p, q),
-        };
-
-        println!("path = {}", raw_path);
-
-        if raw_path == "/main.css" {
-            content.get_body().set_bytes(MAIN_CSS.as_bytes())
-        } else {
-            let page_data = match self.construct_page_data(path, query) {
-                Err(e) => { PageData::Error(format!("database error: {:?} ({})", e, self.db.get_errmsg())) }
-                Ok(page_data) => { page_data }
+            let (path, query) = match ::url::parse_path(&raw_path) {
+                Err(_e) => (Vec::new(), None),
+                Ok((p, q, _f)) => (p, q),
             };
-            content.get_body().set_bytes(construct_html(page_data).as_bytes());
+
+            println!("path = {}", raw_path);
+
+            if raw_path == "/main.css" {
+                content.get_body().set_bytes(MAIN_CSS.as_bytes())
+            } else {
+                let page_data = match self.construct_page_data(path, query) {
+                    Err(e) => { PageData::Error(format!("database error: {:?} ({})", e, self.db.get_errmsg())) }
+                    Ok(page_data) => { page_data }
+                };
+                content.get_body().set_bytes(construct_html(page_data).as_bytes());
+            }
         }
         context.done()
     }
