@@ -24,7 +24,7 @@ impl ui_view::Server for UiViewImpl {
     fn new_session(&mut self, mut context : ui_view::NewSessionContext) {
         let client : web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
-                web_session::ToClient(session).from_server::<LocalClient>()
+                web_session::ToClient::new(session).from_server::<LocalClient>()
             }
             Err(_e) => {
                 return context.fail("".to_string());
@@ -382,7 +382,7 @@ pub fn main() -> ::std::io::Result<()> {
     let ifs = ::fdstream::FdStream::new(3);
     let ofs = ::fdstream::FdStream::new(3);
 
-    let client = ui_view::ToClient(UiViewImpl).from_server::<LocalClient>();
+    let client = ui_view::ToClient::new(UiViewImpl).from_server::<LocalClient>();
 
     let connection_state = RpcConnectionState::new();
     connection_state.run(ifs, ofs, client.client.hook,
