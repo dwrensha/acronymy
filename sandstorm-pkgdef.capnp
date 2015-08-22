@@ -12,27 +12,39 @@ const pkgdef :Spk.PackageDefinition = (
   id = "7m2fcfn7qdyexs3jmn6vrdngcryeuc8y4fa6jpyj4fgwh5tq27ph",
 
   manifest = (
-    # This manifest is included in your app package to tell Sandstorm
-    # about your app.
-
     appTitle = (defaultText = "Acronymy"),
-    appVersion = 4,  # Increment this for every release.
-    appMarketingVersion = (defaultText = "0.0.4"),
+    appVersion = 5,  # Increment this for every release.
+    appMarketingVersion = (defaultText = "2015.08.22"),
+
+    metadata = (
+      icons = (
+        appGrid = (svg = embed "app-graphics/acronymy-128.svg"),
+        grain = (svg = embed "app-graphics/acronymy-24.svg"),
+        market = (svg = embed "app-graphics/acronymy-150.svg"),
+      ),
+      website = "https://dwrensha.ws/acronymy",
+      codeUrl = "https://github.com/dwrensha/acronymy",
+      license = (openSource = bsd2Clause),
+      categories = [games,],
+      author = (
+        contactEmail = "david@sandstorm.io",
+        pgpSignature = embed "pgp-signature",
+      ),
+      pgpKeyring = embed "pgp-keyring",
+      description = (defaultText = embed "description.md"),
+      screenshots = [(width = 909, height = 440, png = embed "screenshot.png")],
+      changeLog = (defaultText = embed "changeLog.md"),
+    ),
 
     actions = [
       # Define your "new document" handlers here.
       ( title = (defaultText = "New Acronymy Instance"),
+        nounPhrase = (defaultText = "Acronymy Instance"),
         command = .initCommand
-        # The command to run when starting for the first time. (".myCommand"
-        # is just a constant defined at the bottom of the file.)
       )
     ],
 
     continueCommand = .continueCommand
-    # This is the command called to start your app back up after it has been
-    # shut down for inactivity. Here we're using the same command as for
-    # starting a new instance, but you could use different commands for each
-    # case.
   ),
 
   sourceMap = (

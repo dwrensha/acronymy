@@ -2,9 +2,9 @@
 name = "acronymy"
 version = "0.0.1"
 dependencies = [
- "capnp 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "capnp-rpc 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "capnpc 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnpc 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fdstream 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "sqlite3 0.1.0 (git+https://github.com/linuxfood/rustsqlite.git)",
@@ -19,7 +19,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "capnp"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 0.3.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -30,16 +30,16 @@ name = "capnp-rpc"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "capnp 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "capnpc 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnpc 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "capnpc"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "capnp 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "capnp 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
