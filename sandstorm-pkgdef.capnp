@@ -13,8 +13,8 @@ const pkgdef :Spk.PackageDefinition = (
 
   manifest = (
     appTitle = (defaultText = "Acronymy"),
-    appVersion = 5,  # Increment this for every release.
-    appMarketingVersion = (defaultText = "2015.08.22"),
+    appVersion = 6,  # Increment this for every release.
+    appMarketingVersion = (defaultText = "2015.10.31"),
 
     metadata = (
       icons = (
@@ -32,6 +32,7 @@ const pkgdef :Spk.PackageDefinition = (
       ),
       pgpKeyring = embed "pgp-keyring",
       description = (defaultText = embed "description.md"),
+      shortDescription = (defaultText = "Word game"),
       screenshots = [(width = 909, height = 440, png = embed "screenshot.png")],
       changeLog = (defaultText = embed "changeLog.md"),
     ),
@@ -39,7 +40,7 @@ const pkgdef :Spk.PackageDefinition = (
     actions = [
       # Define your "new document" handlers here.
       ( title = (defaultText = "New Acronymy Instance"),
-        nounPhrase = (defaultText = "Acronymy Instance"),
+        nounPhrase = (defaultText = "dictionary"),
         command = .initCommand
       )
     ],
