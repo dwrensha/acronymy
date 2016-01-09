@@ -387,7 +387,7 @@ pub fn main() -> ::capnp::Result<()> {
 
         let network =
             twoparty::VatNetwork::new(reader, writer,
-                                      rpc_twoparty_capnp::Side::Server, Default::default());
+                                      rpc_twoparty_capnp::Side::Client, Default::default());
 
         let _rpc_system = RpcSystem::new(Box::new(network), Some(client.client));
         Promise::never_done().wait(wait_scope)

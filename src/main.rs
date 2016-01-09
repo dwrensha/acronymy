@@ -1,6 +1,3 @@
-#![crate_name="acronymy"]
-#![crate_type = "bin"]
-
 #[macro_use]
 extern crate gj;
 extern crate time;
