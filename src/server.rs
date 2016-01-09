@@ -390,7 +390,6 @@ pub fn main() -> ::capnp::Result<()> {
                                       rpc_twoparty_capnp::Side::Server, Default::default());
 
         let _rpc_system = RpcSystem::new(Box::new(network), Some(client.client));
-        println!("about to wait forever...");
         Promise::never_done().wait(wait_scope)
     }).expect("top level error");
     Ok(())
