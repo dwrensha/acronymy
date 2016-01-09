@@ -2,43 +2,55 @@ use grain_capnp::{powerbox_capability, ui_view, ui_session};
 use web_session_capnp::{web_session};
 
 use std::collections::hash_map::HashMap;
-use capnp_rpc::rpc::{RpcConnectionState};
-use capnp_rpc::capability::{LocalClient};
-
+use capnp::Error;
+use capnp_rpc::{RpcSystem, twoparty, rpc_twoparty_capnp};
+use gj::{EventLoop, Promise};
+use gj::io::unix;
 use sqlite3;
 
 #[derive(Clone, Copy)]
 pub struct UiViewImpl;
 
 impl powerbox_capability::Server for UiViewImpl {
-    fn get_powerbox_info(&mut self, context : powerbox_capability::GetPowerboxInfoContext) {
-        context.done()
+    fn get_powerbox_info(&mut self,
+                         _params: powerbox_capability::GetPowerboxInfoParams,
+                         _results: powerbox_capability::GetPowerboxInfoResults)
+                         -> Promise<(), Error>
+    {
+        Promise::ok(())
     }
 }
 
 impl ui_view::Server for UiViewImpl {
-    fn get_view_info(&mut self, context : ui_view::GetViewInfoContext) {
-        context.done()
+    fn get_view_info(&mut self,
+                     _params: ui_view::GetViewInfoParams,
+                     _results: ui_view::GetViewInfoResults)
+                     -> Promise<(), Error>
+    {
+        Promise::ok(())
     }
 
-    fn new_session(&mut self, mut context : ui_view::NewSessionContext) {
-        let client : web_session::Client = match WebSessionImpl::new() {
+    fn new_session(&mut self,
+                   _params: ui_view::NewSessionParams,
+                   mut results: ui_view::NewSessionResults)
+                   -> Promise<(), Error>
+    {
+        let client: web_session::Client = match WebSessionImpl::new() {
             Ok(session) => {
-                web_session::ToClient::new(session).from_server::<LocalClient>()
+                web_session::ToClient::new(session).from_server::<::capnp_rpc::Server>()
             }
             Err(_e) => {
-                return context.fail("".to_string());
+                return Promise::err(Error::failed(format!("failed to create web session")));
             }
         };
         // we need to do this dance to upcast.
-        context.get().1.set_session(ui_session::Client { client : client.client});
-
-        context.done()
+        results.get().set_session(ui_session::Client { client : client.client});
+        Promise::ok(())
     }
 }
 
 pub struct WebSessionImpl {
-    db : sqlite3::Database,
+    db: sqlite3::Database,
 }
 
 unsafe impl Send for WebSessionImpl {}
@@ -321,11 +333,16 @@ fn construct_html(page_data : PageData) -> String {
 }
 
 impl web_session::Server for WebSessionImpl {
-    fn get(&mut self, mut context : web_session::GetContext) {
+    fn get(&mut self,
+           params: web_session::GetParams,
+           mut results: web_session::GetResults)
+        -> Promise<(), Error>
+    {
         println!("GET");
         {
-            let (params, results) = context.get();
-            let raw_path = format!("/{}", params.get_path().unwrap());
+            let params = pry!(params.get());
+            let results = results.get();
+            let raw_path = format!("/{}", pry!(params.get_path()));
             let mut content = results.init_content();
             content.set_mime_type("text/html");
 
@@ -346,29 +363,12 @@ impl web_session::Server for WebSessionImpl {
                 content.get_body().set_bytes(construct_html(page_data).as_bytes());
             }
         }
-        context.done()
-    }
-    fn post(&mut self, context : web_session::PostContext) {
-        println!("POST");
-        context.done()
-    }
-    fn put(&mut self, context : web_session::PutContext) {
-        println!("PUT");
-        context.done()
-    }
-    fn delete(&mut self, context : web_session::DeleteContext) {
-        println!("DELETE");
-        context.done()
-    }
-    fn open_web_socket(&mut self, context : web_session::OpenWebSocketContext) {
-        println!("OPEN WEB SOCKET");
-        context.done()
+        Promise::ok(())
     }
 }
 
-pub fn main() -> ::std::io::Result<()> {
-
-    let args : Vec<String> = ::std::env::args().collect();
+pub fn main() -> ::capnp::Result<()> {
+    let args: Vec<String> = ::std::env::args().collect();
     if args.len() == 4 && args[1] == "--init" {
         println!("initializing...");
         let initdb_path = ::std::path::Path::new(&args[2]);
@@ -378,17 +378,21 @@ pub fn main() -> ::std::io::Result<()> {
         println!("success!");
     }
 
-    // sandstorm launches us with a connection file descriptor 3
-    let ifs = ::fdstream::FdStream::new(3);
-    let ofs = ::fdstream::FdStream::new(3);
+    EventLoop::top_level(move |wait_scope| {
+        // sandstorm launches us with a connection file descriptor 3
+        let stream = try!(unsafe { unix::Stream::from_raw_fd(3) });
+        let (reader, writer) = stream.split();
 
-    let client = ui_view::ToClient::new(UiViewImpl).from_server::<LocalClient>();
+        let client = ui_view::ToClient::new(UiViewImpl).from_server::<::capnp_rpc::Server>();
 
-    let connection_state = RpcConnectionState::new();
-    connection_state.run(ifs, ofs, client.client.hook,
-                         ::capnp::message::ReaderOptions::new());
+        let network =
+            twoparty::VatNetwork::new(reader, writer,
+                                      rpc_twoparty_capnp::Side::Server, Default::default());
 
-    unsafe { ::libc::funcs::posix88::unistd::sleep(::std::u32::MAX); }
+        let _rpc_system = RpcSystem::new(Box::new(network), Some(client.client));
+        println!("about to wait forever...");
+        Promise::never_done().wait(wait_scope)
+    }).expect("top level error");
     Ok(())
 }
 

@@ -18,13 +18,16 @@ path = "src/initdb.rs"
 [dependencies.sqlite3]
 git = "https://github.com/linuxfood/rustsqlite.git"
 
-[build-dependencies]
-capnpc = "*"
+[build-dependencies.capnpc]
+git = "https://github.com/dwrensha/capnpc-rust.git"
 
 [dependencies]
-capnp = "*"
-capnp-rpc = "*"
-libc = "0.1.1"
 url = "0.2.6"
 time = "0.1.3"
-fdstream = "*"
+gj = "*"
+
+[dependencies.capnp]
+git = "https://github.com/dwrensha/capnproto-rust.git"
+
+[dependencies.capnp-rpc]
+git = "https://github.com/dwrensha/capnp-rpc-rust.git"

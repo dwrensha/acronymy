@@ -1,12 +1,12 @@
 #![crate_name="acronymy"]
 #![crate_type = "bin"]
 
-extern crate libc;
+#[macro_use]
+extern crate gj;
 extern crate time;
 extern crate url;
 extern crate capnp;
 extern crate capnp_rpc;
-extern crate fdstream;
 extern crate sqlite3;
 
 pub mod grain_capnp {
