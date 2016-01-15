@@ -6,6 +6,7 @@ as acronyms.
 For example, "cat" might be defined as "cuddly adapted tiger"
 and "dog" might be defined as "dutiful obedient guardian".
 
+[![Try it on Sandstorm](https://img.shields.io/badge/try-live%20demo-783189.svg)](https://demo.sandstorm.io/appdemo/7m2fcfn7qdyexs3jmn6vrdngcryeuc8y4fa6jpyj4fgwh5tq27ph) 
 
 Acronymy is written in Rust and can be deployed as a web app on the
 [Sandstorm](https://sandstorm.io) platform.
