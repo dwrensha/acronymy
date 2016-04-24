@@ -5,7 +5,6 @@ use std::collections::hash_map::HashMap;
 use capnp::Error;
 use capnp_rpc::{RpcSystem, twoparty, rpc_twoparty_capnp};
 use gj::{EventLoop, Promise};
-use gj::io::unix;
 use sqlite3;
 
 #[derive(Clone, Copy)]
@@ -378,19 +377,21 @@ pub fn main() -> ::capnp::Result<()> {
         println!("success!");
     }
 
-    EventLoop::top_level(move |wait_scope| {
-        // sandstorm launches us with a connection file descriptor 3
-        let stream = try!(unsafe { unix::Stream::from_raw_fd(3) });
-        let (reader, writer) = stream.split();
+    EventLoop::top_level(move |wait_scope| -> Result<(), Box<::std::error::Error>> {
+        let mut event_port = try!(::gjio::EventPort::new());
+        let network = event_port.get_network();
+
+        // sandstorm launches us with a connection on file descriptor 3
+	    let stream = try!(unsafe { network.wrap_raw_socket_descriptor(3) });
 
         let client = ui_view::ToClient::new(UiViewImpl).from_server::<::capnp_rpc::Server>();
 
         let network =
-            twoparty::VatNetwork::new(reader, writer,
+            twoparty::VatNetwork::new(stream.clone(), stream,
                                       rpc_twoparty_capnp::Side::Client, Default::default());
 
         let _rpc_system = RpcSystem::new(Box::new(network), Some(client.client));
-        Promise::never_done().wait(wait_scope)
+        Promise::never_done().wait(wait_scope, &mut event_port)
     }).expect("top level error");
     Ok(())
 }

@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate gj;
+#[macro_use] extern crate gj;
+extern crate gjio;
 extern crate time;
 extern crate url;
 extern crate capnp;
