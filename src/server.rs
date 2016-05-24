@@ -1,5 +1,5 @@
-use grain_capnp::{powerbox_capability, ui_view, ui_session};
-use web_session_capnp::{web_session};
+use sandstorm::grain_capnp::{ui_view, ui_session};
+use sandstorm::web_session_capnp::{web_session};
 
 use std::collections::hash_map::HashMap;
 use capnp::Error;
@@ -9,16 +9,6 @@ use sqlite3;
 
 #[derive(Clone, Copy)]
 pub struct UiViewImpl;
-
-impl powerbox_capability::Server for UiViewImpl {
-    fn get_powerbox_info(&mut self,
-                         _params: powerbox_capability::GetPowerboxInfoParams,
-                         _results: powerbox_capability::GetPowerboxInfoResults)
-                         -> Promise<(), Error>
-    {
-        Promise::ok(())
-    }
-}
 
 impl ui_view::Server for UiViewImpl {
     fn get_view_info(&mut self,
