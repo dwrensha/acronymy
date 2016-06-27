@@ -177,8 +177,8 @@ impl WebSessionImpl {
             match query {
                 None => {}
                 Some(q) => {
-                    for &(ref k, ref v) in ::url::form_urlencoded::parse(q.as_bytes()).iter() {
-                        query_map.insert(k.clone(), v.clone());
+                    for (k, v) in ::url::form_urlencoded::parse(q.as_bytes()).into_owned() {
+                        query_map.insert(k, v);
                     }
                 }
             }
@@ -335,10 +335,16 @@ impl web_session::Server for WebSessionImpl {
             let mut content = results.init_content();
             content.set_mime_type("text/html");
 
-            let (path, query) = match ::url::parse_path(&raw_path) {
-                Err(_e) => (Vec::new(), None),
-                Ok((p, q, _f)) => (p, q),
-            };
+            // TODO: there's got to be a cleaner way to do this.
+            let (path, query) = ::url::Url::parse("http://example.com").map(|base| {
+                let query = base.query().map(|s| s.to_string());
+                base.join(&raw_path).map(move |url| {
+                    url.path_segments().map(move |segs| {
+                        let seq_strings: Vec<String> = segs.map(|seg| seg.to_string()).collect();
+                        (seq_strings, query)
+                    }).unwrap_or((Vec::new(), None))
+                })
+            }).unwrap_or(Ok((Vec::new(), None))).unwrap_or((Vec::new(), None));
 
             println!("path = {}", raw_path);
 
