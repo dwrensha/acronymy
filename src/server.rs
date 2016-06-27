@@ -337,8 +337,8 @@ impl web_session::Server for WebSessionImpl {
 
             // TODO: there's got to be a cleaner way to do this.
             let (path, query) = ::url::Url::parse("http://example.com").map(|base| {
-                let query = base.query().map(|s| s.to_string());
-                base.join(&raw_path).map(move |url| {
+                base.join(&raw_path).map(|url| {
+                    let query = url.query().map(|s| s.to_string());
                     url.path_segments().map(move |segs| {
                         let seq_strings: Vec<String> = segs.map(|seg| seg.to_string()).collect();
                         (seq_strings, query)
@@ -346,7 +346,7 @@ impl web_session::Server for WebSessionImpl {
                 })
             }).unwrap_or(Ok((Vec::new(), None))).unwrap_or((Vec::new(), None));
 
-            println!("path = {}", raw_path);
+            println!("path = {:?}, query = {:?}", path, query);
 
             if raw_path == "/main.css" {
                 content.get_body().set_bytes(MAIN_CSS.as_bytes())
