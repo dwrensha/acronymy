@@ -349,6 +349,7 @@ impl web_session::Server for WebSessionImpl {
             println!("path = {:?}, query = {:?}", path, query);
 
             if raw_path == "/main.css" {
+                content.set_mime_type("text/css");
                 content.get_body().set_bytes(MAIN_CSS.as_bytes())
             } else {
                 let page_data = match self.construct_page_data(path, query) {
