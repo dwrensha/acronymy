@@ -1,9 +1,10 @@
-#[macro_use] extern crate gj;
-extern crate gjio;
+extern crate futures;
+extern crate tokio_core;
+extern crate mio_uds;
 extern crate time;
 extern crate url;
 extern crate capnp;
-extern crate capnp_rpc;
+#[macro_use] extern crate capnp_rpc;
 extern crate sandstorm;
 extern crate sqlite3;
 

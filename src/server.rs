@@ -3,8 +3,8 @@ use sandstorm::web_session_capnp::{web_session};
 
 use std::collections::hash_map::HashMap;
 use capnp::Error;
+use capnp::capability::Promise;
 use capnp_rpc::{RpcSystem, twoparty, rpc_twoparty_capnp};
-use gj::{EventLoop, Promise};
 use sqlite3;
 
 #[derive(Clone, Copy)]
@@ -364,6 +364,9 @@ impl web_session::Server for WebSessionImpl {
 }
 
 pub fn main() -> ::capnp::Result<()> {
+    use tokio_core::io::Io;
+    use ::std::os::unix::io::{FromRawFd, IntoRawFd};
+
     let args: Vec<String> = ::std::env::args().collect();
     if args.len() == 4 && args[1] == "--init" {
         println!("initializing...");
@@ -374,24 +377,25 @@ pub fn main() -> ::capnp::Result<()> {
         println!("success!");
     }
 
-    EventLoop::top_level(move |wait_scope| -> Result<(), Box<::std::error::Error>> {
-        let mut event_port = try!(::gjio::EventPort::new());
-        let network = event_port.get_network();
+    let mut core = try!(::tokio_core::reactor::Core::new());
+    let handle = core.handle();
 
-        // sandstorm launches us with a connection on file descriptor 3
-	    let stream = try!(unsafe { network.wrap_raw_socket_descriptor(3) });
+    let stream: ::std::os::unix::net::UnixStream = unsafe { FromRawFd::from_raw_fd(3) };
+    try!(stream.set_nonblocking(true));
+    let stream: ::mio_uds::UnixStream = unsafe { FromRawFd::from_raw_fd(stream.into_raw_fd()) };
+    let stream = try!(::tokio_core::reactor::PollEvented::new(stream, &handle));
 
-        let client = ui_view::ToClient::new(UiViewImpl).from_server::<::capnp_rpc::Server>();
+    let (read_half, write_half) = stream.split();
 
-        let network =
-            twoparty::VatNetwork::new(stream.clone(), stream,
-                                      rpc_twoparty_capnp::Side::Client, Default::default());
+    let network =
+        Box::new(twoparty::VatNetwork::new(read_half, write_half,
+                                           rpc_twoparty_capnp::Side::Client,
+                                           Default::default()));
 
-        let _rpc_system = RpcSystem::new(Box::new(network), Some(client.client));
-        Promise::never_done().wait(wait_scope, &mut event_port)
-    }).expect("top level error");
+    let client = ui_view::ToClient::new(UiViewImpl).from_server::<::capnp_rpc::Server>();
+
+    let rpc_system = RpcSystem::new(network, Some(client.client));
+
+    try!(core.run(rpc_system));
     Ok(())
 }
-
-
-
